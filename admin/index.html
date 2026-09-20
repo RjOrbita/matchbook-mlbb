@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Matchbook — MLBB tournament stats</title>
+  <style>
+    :root { --ink:#eef3ff; --muted:#a9b6cc; --canvas:#0b1120; --panel:#111b2e; --panel-2:#16233a; --line:#273650; --primary:#71e7bd; --primary-ink:#06241a; --accent:#8ea7ff; --danger:#ff8596; --gold:#f6c85f; --shadow:0 18px 45px rgba(0,0,0,.24); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+    button, input, select { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100vh; display:grid; grid-template-columns:240px minmax(0,1fr); }
+    aside { padding:27px 17px; background:#0d1626; border-right:1px solid var(--line); position:sticky; top:0; height:100vh; }
+    .brand { font-weight:800; letter-spacing:-.04em; font-size:22px; display:flex; align-items:center; gap:10px; padding:0 9px 28px; }
+    .brand-mark { width:30px; height:30px; display:grid; place-items:center; background:var(--primary); color:var(--primary-ink); border-radius:9px; font-size:16px; }
+    .eyebrow { color:var(--primary); font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+    .nav { display:grid; gap:5px; }
+    .nav button, .nav a { width:100%; display:flex; gap:11px; align-items:center; background:transparent; color:var(--muted); border:0; padding:11px 12px; text-align:left; border-radius:9px; text-decoration:none; }
+    .nav button:hover, .nav button.active, .nav a:hover { background:var(--panel-2); color:var(--ink); }
+    .nav .icon { width:18px; text-align:center; }
+    .side-note { position:absolute; left:26px; right:26px; bottom:25px; padding:14px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:10px; font-size:12px; }
+    main { padding:32px clamp(20px,4vw,58px) 70px; max-width:1580px; width:100%; margin:0 auto; }
+    .topbar { display:flex; justify-content:space-between; gap:22px; align-items:flex-start; margin-bottom:27px; }
+    h1 { font-size:30px; line-height:1.15; letter-spacing:-.045em; margin:4px 0 5px; }
+    h2 { font-size:18px; letter-spacing:-.02em; margin:0; }
+    h3 { font-size:13px; margin:0; }
+    p { margin:0; }
+    .sub { color:var(--muted); }
+    .actions, .form-actions { display:flex; gap:9px; flex-wrap:wrap; }
+    .btn { border:1px solid var(--line); background:var(--panel-2); color:var(--ink); padding:9px 13px; border-radius:8px; font-weight:650; text-decoration:none; }
+    .btn:hover { border-color:#526788; }
+    .btn.primary { background:var(--primary); border-color:var(--primary); color:var(--primary-ink); }
+    .btn.danger { color:var(--danger); }
+    .view { display:none; }
+    .view.active { display:block; }
+    .card { background:linear-gradient(145deg,rgba(22,35,58,.98),rgba(15,25,42,.98)); border:1px solid var(--line); border-radius:13px; box-shadow:var(--shadow); }
+    .summary { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
+    .stat { padding:17px 18px; }
+    .stat .label { color:var(--muted); font-size:12px; }
+    .stat strong { display:block; font-size:25px; letter-spacing:-.05em; margin-top:2px; }
+    .stat em { font-size:11px; color:var(--primary); font-style:normal; }
+    .split { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(285px,.9fr); gap:18px; }
+    .panel-head { padding:17px 19px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+    .panel-body { padding:17px 19px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:620px; }
+    th { text-align:left; color:var(--muted); font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:10px 11px; border-bottom:1px solid var(--line); }
+    td { padding:12px 11px; border-bottom:1px solid rgba(39,54,80,.75); vertical-align:middle; }
+    tbody tr:last-child td { border:0; }
+    .rank { color:var(--muted); width:24px; }
+    .hero { font-weight:700; } .muted { color:var(--muted); } .green { color:var(--primary); } .gold { color:var(--gold); }
+    .empty { padding:34px 15px; text-align:center; color:var(--muted); }
+    .recent { display:grid; gap:8px; }
+    .recent-item { padding:12px 0; border-bottom:1px solid var(--line); }
+    .recent-item:last-child { border:0; }
+    .recent-title { font-weight:700; display:flex; justify-content:space-between; gap:6px; }
+    .recent-detail { font-size:12px; color:var(--muted); margin-top:3px; }
+    .record-banner { padding:13px 15px; background:rgba(113,231,189,.09); border:1px solid rgba(113,231,189,.28); border-radius:10px; color:#c9fce9; margin-bottom:18px; font-size:13px; }
+    .form-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    label { display:grid; gap:6px; color:var(--muted); font-size:12px; font-weight:650; }
+    input, select { min-width:0; color:var(--ink); background:#0b1424; border:1px solid #334463; border-radius:7px; padding:9px 10px; outline:none; }
+    input:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(142,167,255,.15); }
+    input[type=file] { padding:7px; color:var(--muted); }
+    .entry-section { margin-bottom:18px; }
+    .section-title { display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:0 2px 9px; }
+    .section-title p { font-size:12px; color:var(--muted); }
+    .team-objectives { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .team-box { background:rgba(11,20,36,.65); border:1px solid var(--line); border-radius:10px; padding:13px; }
+    .team-box h3 { color:var(--accent); margin-bottom:10px; }
+    .objective-fields { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .objective-fields label { font-size:11px; }
+    .objective-fields input { padding:8px; width:100%; }
+    .draft-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .draft-team { border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .draft-team header { display:flex; justify-content:space-between; align-items:center; padding:10px 13px; background:rgba(11,20,36,.65); }
+    .draft-team .draft-row { display:grid; grid-template-columns:40px 1fr 1fr 68px; gap:7px; padding:8px 10px; border-top:1px solid rgba(39,54,80,.7); }
+    .draft-team input { padding:7px; }
+    .draft-order { color:var(--muted); align-self:center; font-size:12px; font-weight:700; }
+    .scoreboard { overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+    .scoreboard table { min-width:1350px; }
+    .scoreboard input, .scoreboard select { width:100%; border:0; border-radius:5px; padding:7px; background:#0d1728; }
+    .scoreboard th { background:rgba(11,20,36,.85); position:sticky; top:0; z-index:1; white-space:nowrap; }
+    .scoreboard td { padding:5px; }
+    .scoreboard .team-cell { font-size:11px; color:var(--accent); font-weight:700; text-align:center; }
+    .scoreboard .numeric { width:57px; text-align:center; }
+    .scoreboard .player { min-width:125px; } .scoreboard .wide { min-width:160px; }
+    .kda-preview { color:var(--primary); text-align:center; font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
+    .screenshot { border:1px dashed #526788; border-radius:10px; padding:11px; display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; }
+    #screenshot-preview { display:none; width:78px; height:46px; object-fit:cover; border-radius:5px; border:1px solid var(--line); }
+    .data-note { margin-top:12px; color:var(--muted); font-size:12px; }
+    .toast { position:fixed; bottom:24px; right:24px; max-width:330px; background:#d5ffed; color:#09261a; border-radius:9px; padding:12px 14px; box-shadow:var(--shadow); transform:translateY(100px); opacity:0; transition:.24s ease; font-weight:650; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .login-screen { display:none; position:fixed; inset:0; z-index:10; place-items:center; padding:20px; background:radial-gradient(circle at 15% 0%,#1a3456 0,transparent 32rem),var(--canvas); }
+    .auth-needed .app, .auth-needed .toast { display:none; }
+    .auth-needed .login-screen { display:grid; }
+    .login-card { width:min(100%,400px); padding:31px; background:linear-gradient(145deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:15px; box-shadow:var(--shadow); }
+    .login-card .brand { padding:0 0 24px; }.login-card h1 { font-size:27px; margin:7px 0; }.login-card p { color:var(--muted); }.login-card form { display:grid; gap:13px; margin-top:24px; }.login-card .btn { width:100%; margin-top:4px; }.login-error { min-height:18px; color:var(--danger); font-size:12px; }.login-back { display:block; color:var(--muted); text-align:center; margin-top:18px; font-size:12px; }.login-back:hover { color:var(--ink); }
+    .game-card { display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--line); }
+    .game-card:last-child { border:0; }.game-no { color:var(--primary); font-weight:800; font-size:12px; }.game-score { font-weight:800; text-align:right; }.game-meta { color:var(--muted); font-size:12px; }
+    @media (max-width:950px) { .app{grid-template-columns:1fr}.side-note{display:none} aside{height:auto;position:static;padding:15px;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 9px 13px}.nav{display:flex;overflow:auto}.nav button{width:auto;white-space:nowrap}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:640px) { main{padding:23px 14px 60px}.topbar{display:grid}.summary{grid-template-columns:repeat(2,1fr)}.form-grid,.draft-grid,.team-objectives{grid-template-columns:1fr}.objective-fields{grid-template-columns:repeat(4,1fr)} h1{font-size:26px}.topbar .actions{width:100%}.topbar .actions .btn{flex:1}.draft-team .draft-row{grid-template-columns:30px 1fr 1fr 52px;padding:7px}.draft-team .draft-row input{font-size:12px} }
+  </style>
+</head>
+<body class="auth-needed">
+  <div class="app">
+    <aside>
+      <div class="brand"><span class="brand-mark">M</span> Matchbook</div>
+      <div class="nav" aria-label="Main navigation">
+        <a href="../index.html"><span class="icon">←</span> Public stats</a>
+        <button class="active" data-view="dashboard"><span class="icon">▦</span> Dashboard</button>
+        <button data-view="entry"><span class="icon">＋</span> Record a game</button>
+        <button data-view="games"><span class="icon">◫</span> Game archive</button>
+      </div>
+      <div class="side-note"><span class="eyebrow">Your data</span><br>Saved only in this browser. Export a backup after each match day.</div>
+    </aside>
+    <main>
+      <section id="dashboard" class="view active">
+        <div class="topbar"><div><div class="eyebrow">Admin workspace · Tournament control room</div><h1>Stats, without the spreadsheet sprawl.</h1><p class="sub">Your post-game screenshot becomes a clean, searchable match record.</p></div><div class="actions"><a class="btn" href="../index.html">Open public page</a><button class="btn" id="export-data">Export backup</button><button class="btn" id="logout">Sign out</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <div class="summary" id="summary"></div>
+        <div class="split">
+          <article class="card"><div class="panel-head"><h2>Player leaderboard</h2><span class="muted">All recorded games</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Games</th><th>KDA</th><th>Win rate</th><th>Most played hero</th></tr></thead><tbody id="player-leaderboard"></tbody></table></div></article>
+          <article class="card"><div class="panel-head"><h2>Recent games</h2><button class="btn" data-view="games">View all</button></div><div class="panel-body"><div id="recent-games" class="recent"></div></div></article>
+        </div>
+        <div style="height:18px"></div>
+        <article class="card"><div class="panel-head"><h2>Hero snapshot</h2><span class="muted">Draft and performance totals</span></div><div class="table-wrap"><table><thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead><tbody id="hero-leaderboard"></tbody></table></div></article>
+      </section>
+
+      <section id="entry" class="view">
+        <div class="topbar"><div><div class="eyebrow">Post-game workflow</div><h1>Record one completed game</h1><p class="sub">Complete the scoreboard from your screenshot, then save. Required fields are marked with an asterisk.</p></div><div class="actions"><button class="btn" id="new-game">Start fresh</button><button class="btn primary" id="save-game">Save game record</button></div></div>
+        <div class="record-banner">Recommended order: fill the match details → draft → player scoreboard → final items. The screenshot is a visual reference only; it is not uploaded or saved.</div>
+        <form id="game-form">
+          <article class="card panel-body entry-section">
+            <div class="section-title"><h2>1. Match details</h2><p>Everything needed to locate this game later.</p></div>
+            <div class="form-grid">
+              <label>Date *<input type="date" id="game-date" required></label>
+              <label>Stage / round *<input id="stage" placeholder="Group stage — Week 1" required></label>
+              <label>Series opponent *<input id="opponent" placeholder="e.g. Nexus Five" required></label>
+              <label>Game number *<input type="number" id="game-number" min="1" value="1" required></label>
+              <label>Our team *<input id="team-a" placeholder="Your team name" required></label>
+              <label>Opponent team *<input id="team-b" placeholder="Opponent team name" required></label>
+              <label>Game duration <input id="duration" placeholder="MM:SS e.g. 16:42"></label>
+              <label>Winner *<select id="winner" required><option value="">Select winning team</option><option value="a">Our team</option><option value="b">Opponent team</option></select></label>
+              <label>MLBB patch <input id="patch" placeholder="e.g. 2.1.18"></label>
+              <label>Recorded by <input id="keeper" placeholder="Your name / alias"></label>
+              <label style="grid-column:span 2">Post-game screenshot <span class="screenshot"><img id="screenshot-preview" alt="Selected screenshot preview"><input type="file" id="screenshot" accept="image/*"><span id="screenshot-name">Optional local reference</span></span></label>
+            </div>
+          </article>
+
+          <article class="card panel-body entry-section">
+            <div class="section-title"><h2>2. Draft: picks and bans</h2><p>Enter picks in order. Bans are optional for the first version.</p></div>
+            <div class="draft-grid" id="draft-grid"></div>
+          </article>
+
+          <article class="card panel-body entry-section">
+            <div class="section-title"><h2>3. Team objectives</h2><p>Use zero for an objective not taken. First Blood is recorded as yes/no.</p></div>
+            <div class="team-objectives" id="objectives"></div>
+          </article>
+
+          <article class="card panel-body entry-section">
+            <div class="section-title"><h2>4. Player scoreboard and final builds</h2><p>Items can be entered as a comma-separated final build, in slot order.</p></div>
+            <div class="scoreboard"><table><thead><tr><th>Side</th><th>Player *</th><th>Hero *</th><th>Role</th><th>K</th><th>D</th><th>A</th><th>KDA</th><th>Gold</th><th>Damage dealt</th><th>Damage taken</th><th>Turret dmg.</th><th>Obj. dmg.</th><th>TF part. %</th><th>Final item build</th></tr></thead><tbody id="scoreboard-body"></tbody></table></div>
+            <p class="data-note">Extra values are optional—record them whenever the screenshot or replay makes them available. The system uses K/D/A, hero, and winner for the primary leaderboards.</p>
+          </article>
+          <div class="form-actions"><button class="btn primary" type="submit">Save game record</button><button class="btn" type="button" id="save-and-new">Save and record next game</button></div>
+        </form>
+      </section>
+
+      <section id="games" class="view">
+        <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All games recorded on this device.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all local data</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <article class="card" id="game-archive"></article>
+      </section>
+    </main>
+  </div>
+  <section class="login-screen" id="login-screen" aria-label="Admin login">
+    <div class="login-card">
+      <div class="brand"><span class="brand-mark">M</span> Matchbook</div>
+      <div class="eyebrow">Restricted area</div><h1>Admin sign in</h1><p>Only the tournament stats keeper should use this workspace.</p>
+      <form id="login-form">
+        <label>Username<input id="login-username" autocomplete="username" required></label>
+        <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+        <div class="login-error" id="login-error" role="alert"></div>
+        <button class="btn primary" type="submit">Sign in</button>
+      </form>
+      <a class="login-back" href="../index.html">← Return to public tournament stats</a>
+    </div>
+  </section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const STORE = 'matchbook-mlbb-v1';
+    const ADMIN_SESSION = 'matchbook-admin-session-v1';
+    const slots = Array.from({length:10}, (_, i) => ({ side: i < 5 ? 'a' : 'b', slot: (i % 5) + 1 }));
+    let games = JSON.parse(localStorage.getItem(STORE) || '[]');
+    const $ = (selector) => document.querySelector(selector);
+    const esc = (value = '') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const number = (value) => Number(value) || 0;
+    const teamName = (side) => (side === 'a' ? $('#team-a').value.trim() || 'Team A' : $('#team-b').value.trim() || 'Team B');
+    function toast(message) { const box = $('#toast'); box.textContent = message; box.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => box.classList.remove('show'), 3200); }
+    function makeEntryRows() {
+      $('#scoreboard-body').innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? 'A' : 'B'}<br><span class="side-name">Team ${side === 'a' ? 'A' : 'B'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, ..."></td></tr>`).join('');
+      updateTeamLabels();
+      $('#scoreboard-body').addEventListener('input', updateKdas);
+    }
+    function makeDraft() { $('#draft-grid').innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Our team' : 'Opponent'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join(''); updateDraftLabels(); }
+    function makeObjectives() { $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Our team' : 'Opponent team'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join(''); updateObjectiveLabels(); }
+    function updateTeamLabels() { document.querySelectorAll('#scoreboard-body tr').forEach(row => { const side = row.dataset.side; row.querySelector('.side-name').textContent = teamName(side); }); }
+    function updateDraftLabels() { document.querySelectorAll('[data-draft-side]').forEach(box => { const side = box.dataset.draftSide; box.querySelector('h3').textContent = `${teamName(side)} picks`; }); }
+    function updateObjectiveLabels() { document.querySelectorAll('[data-objective-side]').forEach(box => { const side = box.dataset.objectiveSide; box.querySelector('h3').textContent = teamName(side); }); }
+    function updateKdas() { document.querySelectorAll('#scoreboard-body tr').forEach(row => { const k = number(row.querySelector('.kills').value), d = number(row.querySelector('.deaths').value), a = number(row.querySelector('.assists').value); row.querySelector('.kda-preview').textContent = ((k + a) / Math.max(1,d)).toFixed(1); }); }
+    function resetForm() { $('#game-form').reset(); $('#game-date').value = new Date().toISOString().slice(0,10); $('#game-number').value = 1; $('#screenshot-name').textContent = 'Optional local reference'; $('#screenshot-preview').style.display = 'none'; makeDraft(); makeObjectives(); makeEntryRows(); updateKdas(); }
+    function collectGame() {
+      const basic = { date: $('#game-date').value, stage: $('#stage').value.trim(), opponent: $('#opponent').value.trim(), gameNumber: number($('#game-number').value), teamA: $('#team-a').value.trim(), teamB: $('#team-b').value.trim(), duration: $('#duration').value.trim(), winner: $('#winner').value, patch: $('#patch').value.trim(), keeper: $('#keeper').value.trim() };
+      const stats = Array.from(document.querySelectorAll('#scoreboard-body tr')).map(row => ({ side:row.dataset.side, player:row.querySelector('.player').value.trim(), hero:row.querySelector('.hero').value.trim(), role:row.querySelector('.role').value, kills:number(row.querySelector('.kills').value), deaths:number(row.querySelector('.deaths').value), assists:number(row.querySelector('.assists').value), gold:number(row.querySelector('.gold').value), damage:number(row.querySelector('.damage').value), taken:number(row.querySelector('.taken').value), turret:number(row.querySelector('.turret').value), objective:number(row.querySelector('.objective').value), participation:number(row.querySelector('.participation').value), items:row.querySelector('.items').value.trim() }));
+      const draft = Array.from(document.querySelectorAll('[data-draft-side]')).flatMap(box => Array.from(box.querySelectorAll('.draft-row')).map((row, index) => ({side:box.dataset.draftSide, order:index+1, hero:row.querySelector('.draft-hero').value.trim(), player:row.querySelector('.draft-player').value.trim(), role:row.querySelector('.draft-role').value})).filter(p => p.hero || p.player));
+      const objectives = Array.from(document.querySelectorAll('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:number(box.querySelector('.towers').value), turtles:number(box.querySelector('.turtles').value), lords:number(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
+      return { id:crypto.randomUUID(), createdAt:new Date().toISOString(), ...basic, stats, draft, objectives };
+    }
+    function validGame(game) { if (!game.date || !game.stage || !game.opponent || !game.teamA || !game.teamB || !game.winner) return 'Complete every required match detail.'; if (game.teamA.toLowerCase() === game.teamB.toLowerCase()) return 'Use two distinct team names.'; if (game.stats.some(s => !s.player || !s.hero)) return 'Enter a player and hero in every one of the ten scoreboard rows.'; const heroes = game.stats.map(s => s.hero.toLowerCase()); if (new Set(heroes).size !== heroes.length) return 'Each hero can only be picked once in a game.'; return ''; }
+    function saveGame(andNew = false) { const game = collectGame(); const issue = validGame(game); if (issue) { toast(issue); return; } games.unshift(game); localStorage.setItem(STORE, JSON.stringify(games)); render(); toast(`${game.teamA} vs ${game.teamB}, Game ${game.gameNumber} saved.`); if (andNew) { resetForm(); } else { showView('dashboard'); } }
+    function gameScore(game) { const a = game.stats.filter(s=>s.side==='a').reduce((sum,s)=>sum+s.kills,0), b = game.stats.filter(s=>s.side==='b').reduce((sum,s)=>sum+s.kills,0); return `${a} – ${b}`; }
+    function displayWinner(game) { return game.winner === 'a' ? game.teamA : game.teamB; }
+    function render() {
+      const allStats = games.flatMap(g => g.stats.map(s => ({...s, won:s.side === g.winner, game:g})));
+      const players = new Map(); const heroes = new Map();
+      allStats.forEach(s => { const key=s.player.toLowerCase(); if(!players.has(key)) players.set(key,{name:s.player,games:0,wins:0,k:0,d:0,a:0,heroes:{}}); const p=players.get(key); p.games++;p.wins+=s.won?1:0;p.k+=s.kills;p.d+=s.deaths;p.a+=s.assists;p.heroes[s.hero]=(p.heroes[s.hero]||0)+1; const hKey=s.hero.toLowerCase(); if(!heroes.has(hKey)) heroes.set(hKey,{name:s.hero,picks:0,wins:0,k:0,d:0,a:0,players:new Set()}); const h=heroes.get(hKey);h.picks++;h.wins+=s.won?1:0;h.k+=s.kills;h.d+=s.deaths;h.a+=s.assists;h.players.add(s.player); });
+      const totalKills = allStats.reduce((sum,s)=>sum+s.kills,0); const uniqueHeroes=heroes.size;
+      $('#summary').innerHTML = [{l:'Games recorded',v:games.length,c:games.length?'Your archive is growing':'Add your first game'},{l:'Teams recorded',v:new Set(games.flatMap(g=>[g.teamA,g.teamB])).size,c:'Across all series'},{l:'Heroes tracked',v:uniqueHeroes,c:'From final scoreboards'},{l:'Kills recorded',v:totalKills,c:'Combined team total'}].map(s=>`<article class="card stat"><div class="label">${s.l}</div><strong>${s.v}</strong><em>${s.c}</em></article>`).join('');
+      const playerRows=[...players.values()].sort((a,b)=>(b.k+b.a)/Math.max(1,b.d)-(a.k+a.a)/Math.max(1,a.d)).slice(0,8);
+      $('#player-leaderboard').innerHTML=playerRows.length?playerRows.map((p,i)=>{const hero=Object.entries(p.heroes).sort((a,b)=>b[1]-a[1])[0][0];return `<tr><td class="rank">${i+1}</td><td><strong>${esc(p.name)}</strong></td><td>${p.games}</td><td class="green">${((p.k+p.a)/Math.max(1,p.d)).toFixed(2)}</td><td>${Math.round(p.wins/p.games*100)}%</td><td class="hero">${esc(hero)}</td></tr>`}).join(''):`<tr><td colspan="6" class="empty">No player data yet. Record your first game to populate the leaderboard.</td></tr>`;
+      const heroRows=[...heroes.values()].sort((a,b)=>b.picks-a.picks || b.wins-a.wins).slice(0,8);
+      $('#hero-leaderboard').innerHTML=heroRows.length?heroRows.map(h=>`<tr><td class="hero">${esc(h.name)}</td><td>${h.picks}</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Hero statistics will appear here once a game is saved.</td></tr>`;
+      $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} · Game ${g.gameNumber} · Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
+      $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration || 'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
+    }
+    function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id)); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id)); window.scrollTo({top:0,behavior:'smooth'}); }
+    function unlockAdmin() { sessionStorage.setItem(ADMIN_SESSION, 'active'); document.body.classList.remove('auth-needed'); }
+    if (sessionStorage.getItem(ADMIN_SESSION) === 'active') document.body.classList.remove('auth-needed');
+    $('#login-form').addEventListener('submit', event => { event.preventDefault(); const username=$('#login-username').value, password=$('#login-password').value; if (username === 'admin' && password === 'admin') { $('#login-error').textContent=''; unlockAdmin(); toast('Signed in to the admin workspace.'); } else { $('#login-error').textContent='Incorrect username or password.'; $('#login-password').value=''; $('#login-password').focus(); } });
+    $('#logout').addEventListener('click', () => { sessionStorage.removeItem(ADMIN_SESSION); document.body.classList.add('auth-needed'); $('#login-form').reset(); $('#login-error').textContent=''; });
+    document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
+    document.querySelectorAll('[data-go-entry]').forEach(btn=>btn.addEventListener('click',()=>showView('entry')));
+    $('#team-a').addEventListener('input',()=>{updateTeamLabels();updateDraftLabels();updateObjectiveLabels()}); $('#team-b').addEventListener('input',()=>{updateTeamLabels();updateDraftLabels();updateObjectiveLabels()});
+    $('#game-form').addEventListener('submit',e=>{e.preventDefault();saveGame(false)}); $('#save-game').addEventListener('click',()=>saveGame(false)); $('#save-and-new').addEventListener('click',()=>saveGame(true)); $('#new-game').addEventListener('click',()=>{if(confirm('Clear the current unsaved game form?')) resetForm()});
+    $('#screenshot').addEventListener('change',e=>{const file=e.target.files[0]; if(!file)return; $('#screenshot-name').textContent=file.name; const preview=$('#screenshot-preview'); preview.src=URL.createObjectURL(file);preview.style.display='block';});
+    $('#export-data').addEventListener('click',()=>{const file=new Blob([JSON.stringify({exportedAt:new Date().toISOString(), games},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=`matchbook-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);toast('Backup exported. Keep it somewhere safe.');});
+    $('#clear-data').addEventListener('click',()=>{if(confirm('Permanently remove every local Matchbook game from this browser? Export a backup first.')){games=[];localStorage.removeItem(STORE);render();toast('All local Matchbook data was removed.')}});
+    resetForm(); render();
+  </script>
+</body>
+</html>
