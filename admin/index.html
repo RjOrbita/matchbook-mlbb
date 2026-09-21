@@ -99,7 +99,7 @@
     .auth-needed .login-screen { display:grid; }
     .login-card { width:min(100%,400px); padding:31px; background:linear-gradient(145deg,var(--panel-2),var(--panel)); border:1px solid var(--line); border-radius:15px; box-shadow:var(--shadow); }
     .login-card .brand { padding:0 0 24px; }.login-card h1 { font-size:27px; margin:7px 0; }.login-card p { color:var(--muted); }.login-card form { display:grid; gap:13px; margin-top:24px; }.login-card .btn { width:100%; margin-top:4px; }.login-error { min-height:18px; color:var(--danger); font-size:12px; }.login-back { display:block; color:var(--muted); text-align:center; margin-top:18px; font-size:12px; }.login-back:hover { color:var(--ink); }
-    .game-card { display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--line); }
+    .game-card { display:grid; grid-template-columns:52px 1fr auto auto; align-items:center; gap:15px; padding:13px 16px; border-bottom:1px solid var(--line); }
     .game-card:last-child { border:0; }.game-no { color:var(--primary); font-weight:800; font-size:12px; }.game-score { font-weight:800; text-align:right; }.game-meta { color:var(--muted); font-size:12px; }
 
     /* ─── Roster styles ─── */
@@ -733,8 +733,14 @@
 
       $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} · Game ${g.gameNumber} · Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
 
-      $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration||'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
+      $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration||'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div><div><button class="btn small danger" onclick="deleteGame('${g.id}')">Delete</button></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
     }
+
+    window.deleteGame = async function(gameId) {
+      if (!confirm('Are you sure you want to delete this game record?')) return;
+      await dbDeleteGame(gameId);
+      toast('Game deleted.');
+    };
 
     // ═══ VIEW SWITCHING ═══
     function showView(id) {
