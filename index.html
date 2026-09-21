@@ -383,12 +383,14 @@
         </div>
       `;
 
+      const winnerText = game.winner === 'a' ? esc(game.teamA) : esc(game.teamB);
       $('#modal-body').innerHTML = `
         <div style="text-align:center; margin-bottom:24px">
-          <h2 style="font-size:24px">${esc(game.teamA)} <span class="gold" style="margin:0 12px">${score1} - ${score2}</span> ${esc(game.teamB)}</h2>
+          <div style="color:var(--gold); font-size:12px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px">👑 ${winnerText} Won</div>
+          <h2 style="font-size:24px; margin:0">${esc(game.teamA)} <span class="gold" style="margin:0 12px">${score1} - ${score2}</span> ${esc(game.teamB)}</h2>
           <div class="muted" style="margin-top:8px">${esc(game.stage)} · Game ${game.gameNumber} · ${esc(game.date)}</div>
         </div>
-        ${game.screenshot ? `<img src="${game.screenshot}" class="match-screenshot">` : ''}
+        ${game.screenshot ? `<img src="${game.screenshot}" class="match-screenshot">` : '<div style="text-align:center; padding:30px; background:#060a12; border-radius:8px; border:1px solid var(--line); color:var(--muted); margin-bottom:20px; font-size:13px">No post-game screenshot uploaded for this match.</div>'}
         ${makeTable(t1Stats, game.teamA)}
         ${makeTable(t2Stats, game.teamB)}
       `;

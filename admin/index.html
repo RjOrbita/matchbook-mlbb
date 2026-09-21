@@ -681,7 +681,7 @@
     $('#login-form').addEventListener('submit', e => {
       e.preventDefault();
       const u = $('#login-username').value, p = $('#login-password').value;
-      if (u === 'admin' && p === 'admin') { $('#login-error').textContent=''; unlockAdmin(); toast('Signed in.'); }
+      if (u === 'orbitaadmin' && p === 'uecesports') { $('#login-error').textContent=''; unlockAdmin(); toast('Signed in.'); }
       else { $('#login-error').textContent='Incorrect username or password.'; $('#login-password').value=''; $('#login-password').focus(); }
     });
     $('#logout').addEventListener('click', () => { sessionStorage.removeItem(ADMIN_SESSION); document.body.classList.add('auth-needed'); $('#login-form').reset(); $('#login-error').textContent=''; });
