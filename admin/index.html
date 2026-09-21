@@ -486,15 +486,19 @@
               ${players.map(p => `
                 <div class="roster-player" style="display:flex; align-items:center; gap:8px;">
                   ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
-                  <span><strong>${esc(p.name)}</strong></span>
+                  <span style="display:flex; flex-direction:column; justify-content:center;">
+                    <strong>${esc(p.name)}</strong>
+                    ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1;">${esc(p.realName)}</span>` : ''}
+                  </span>
                   <span class="role-badge" style="margin-left:auto">${esc(p.role || '—')}</span>
                   <button class="btn small danger" onclick="deletePlayer('${p.id}')">✕</button>
                 </div>
               `).join('')}
-              <div class="add-player">
-                <input type="file" id="rp-photo-${team.id}" accept="image/*" style="width:90px; font-size:10px;" title="Player Photo">
-                <input class="rp-name" id="rp-name-${team.id}" placeholder="New player name...">
-                <select class="rp-role" id="rp-role-${team.id}">
+              <div class="add-player" style="display:grid; grid-template-columns:auto 1fr 1fr auto auto; gap:6px; align-items:center; margin-top:8px;">
+                <input type="file" id="rp-photo-${team.id}" accept="image/*" style="width:75px; font-size:10px;" title="Player Photo">
+                <input class="rp-name" id="rp-name-${team.id}" placeholder="IGN (e.g. Faker)">
+                <input class="rp-realname" id="rp-realname-${team.id}" placeholder="Real Name (Optional)">
+                <select class="rp-role" id="rp-role-${team.id}" style="width:80px">
                   <option value="">Role</option>
                   <option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option>
                 </select>
@@ -531,10 +535,12 @@
 
     window.addPlayer = async function(teamId) {
       const nameInput = $(`#rp-name-${teamId}`);
+      const realNameInput = $(`#rp-realname-${teamId}`);
       const roleSelect = $(`#rp-role-${teamId}`);
       const fileInput = $(`#rp-photo-${teamId}`);
       const name = nameInput.value.trim();
-      if (!name) return toast('Enter a player name.');
+      const realName = realNameInput ? realNameInput.value.trim() : '';
+      if (!name) return toast('Enter an IGN/player name.');
       
       let photo = null;
       if (fileInput.files && fileInput.files[0]) {
@@ -552,10 +558,14 @@
       
       // Merge with existing photo if we didn't upload a new one
       if (existing && !photo) photo = existing.photo;
+      
+      // Preserve existing real name if not provided
+      const finalRealName = realName || (existing && existing.realName ? existing.realName : '');
 
-      await dbSavePlayer({ id, name, teamId, role: roleSelect.value, photo });
+      await dbSavePlayer({ id, name, teamId, role: roleSelect.value, photo, realName: finalRealName });
       
       nameInput.value = '';
+      if (realNameInput) realNameInput.value = '';
       roleSelect.value = '';
       if (fileInput) fileInput.value = '';
       toast(existing ? `Player "${name}" updated.` : `Player "${name}" added.`);
