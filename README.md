@@ -1,18 +1,91 @@
-# Matchbook
+# Matchbook — MLBB Tournament Tracker
 
-Matchbook is a lightweight MLBB tournament stat book. The public site is served at `/`, and its restricted stats-entry workspace is at `/admin/`.
+A sleek tournament stats tracker for **Mobile Legends: Bang Bang** with real-time online sync.
 
-## Pages
+## Features
 
-- `/` — read-only tournament results, player leaderboard, and hero trends.
-- `/admin/` — game entry, archive, and backup tools. It currently accepts `admin` as both the username and password.
+### ☁️ Online Database
+- **Firebase Realtime Database** — data syncs across all devices in real-time
+- No more "data only on this browser" — share the link and everyone sees the same stats
+- Automatic localStorage fallback for offline usage
 
-## Important limitation
+### ♟ Team & Player Roster
+- Register teams and players in the admin workspace
+- Players auto-fill when you select a team during game recording
+- Default roles are remembered and pre-populated
 
-This repository is a static prototype. The `/admin/` login is a **temporary visual gate only**: its check runs in the visitor's browser, so it must not be considered secure on a public GitHub Pages site. It is suitable only for a private demo.
+### 🎮 Smart Game Recording
+- **Hero dropdown** — searchable combobox with all 133 MLBB heroes
+- **Auto-fill** — select your team and opponent, player names & roles fill automatically
+- **Connected fields** — no more typing the same name, hero, and role every game
 
-Before recording real tournament results publicly, move the data and authentication to a hosted backend. That will enable secure admin-only entry and let all viewers see the same shared statistics.
+### 📊 Liquipedia-Style Viewer
+- **Participating Teams** section at the top showing rosters
+- **Sortable leaderboards** — sort by kills, deaths, assists, KDA, win rate, games played
+- **Hero trends** — sort by pick rate, win rate, or KDA
+- **Real-time updates** — no refresh needed
 
-## GitHub Pages
+## Setup
 
-Publish this folder as the GitHub Pages source. GitHub Pages will serve `index.html` at the site root and `admin/index.html` at `/admin/`.
+### 1. Deploy the Files
+Host the files on any static hosting (GitHub Pages, Netlify, Vercel, etc.).
+
+### 2. Configure Firebase (Required for Online Sync)
+
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project (e.g., "matchbook-mlbb")
+3. Add a web app to your project
+4. Copy the config values
+5. Go to **Realtime Database** → **Create Database** → Start in **Test Mode**
+6. Edit `firebase-config.js` and paste your config values:
+
+```js
+const FIREBASE_CONFIG = {
+  apiKey: "your-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "your-sender-id",
+  appId: "your-app-id"
+};
+```
+
+### 3. Set Database Rules
+
+In the Firebase Console → Realtime Database → Rules, set:
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+```
+
+> ⚠️ For production, restrict write access to authenticated users.
+
+## File Structure
+
+```
+matchbook-mlbb/
+├── index.html          # Public viewer page (Liquipedia-style)
+├── role-guide.html     # Landing / about page
+├── admin/
+│   └── index.html      # Admin workspace (recording, roster, dashboard)
+├── firebase-config.js  # Firebase project credentials
+├── heroes.js           # Complete MLBB hero list (133 heroes)
+├── db.js               # Database abstraction layer
+└── README.md
+```
+
+## Admin Login
+
+Default credentials: `admin` / `admin`
+
+## Usage Workflow
+
+1. **Register roster** — Go to Admin → Roster tab → Add teams and players
+2. **Record a game** — Go to Admin → Record a game → Select teams (auto-fills players) → Pick heroes from dropdown → Enter stats → Save
+3. **View stats** — Open the public viewer page → See teams, leaderboards, results
+4. **Share** — Send the viewer URL to anyone — they'll see the same data in real-time

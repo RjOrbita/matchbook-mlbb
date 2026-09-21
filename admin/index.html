@@ -21,6 +21,7 @@
     .nav button:hover, .nav button.active, .nav a:hover { background:var(--panel-2); color:var(--ink); }
     .nav .icon { width:18px; text-align:center; }
     .side-note { position:absolute; left:26px; right:26px; bottom:25px; padding:14px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:10px; font-size:12px; }
+    .side-note.online { border-color:rgba(113,231,189,.3); color:#c9fce9; background:rgba(113,231,189,.06); }
     main { padding:32px clamp(20px,4vw,58px) 70px; max-width:1580px; width:100%; margin:0 auto; }
     .topbar { display:flex; justify-content:space-between; gap:22px; align-items:flex-start; margin-bottom:27px; }
     h1 { font-size:30px; line-height:1.15; letter-spacing:-.045em; margin:4px 0 5px; }
@@ -29,10 +30,11 @@
     p { margin:0; }
     .sub { color:var(--muted); }
     .actions, .form-actions { display:flex; gap:9px; flex-wrap:wrap; }
-    .btn { border:1px solid var(--line); background:var(--panel-2); color:var(--ink); padding:9px 13px; border-radius:8px; font-weight:650; text-decoration:none; }
+    .btn { border:1px solid var(--line); background:var(--panel-2); color:var(--ink); padding:9px 13px; border-radius:8px; font-weight:650; text-decoration:none; white-space:nowrap; }
     .btn:hover { border-color:#526788; }
     .btn.primary { background:var(--primary); border-color:var(--primary); color:var(--primary-ink); }
     .btn.danger { color:var(--danger); }
+    .btn.small { padding:6px 10px; font-size:12px; }
     .view { display:none; }
     .view.active { display:block; }
     .card { background:linear-gradient(145deg,rgba(22,35,58,.98),rgba(15,25,42,.98)); border:1px solid var(--line); border-radius:13px; box-shadow:var(--shadow); }
@@ -90,7 +92,7 @@
     .screenshot { border:1px dashed #526788; border-radius:10px; padding:11px; display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; }
     #screenshot-preview { display:none; width:78px; height:46px; object-fit:cover; border-radius:5px; border:1px solid var(--line); }
     .data-note { margin-top:12px; color:var(--muted); font-size:12px; }
-    .toast { position:fixed; bottom:24px; right:24px; max-width:330px; background:#d5ffed; color:#09261a; border-radius:9px; padding:12px 14px; box-shadow:var(--shadow); transform:translateY(100px); opacity:0; transition:.24s ease; font-weight:650; }
+    .toast { position:fixed; bottom:24px; right:24px; max-width:330px; background:#d5ffed; color:#09261a; border-radius:9px; padding:12px 14px; box-shadow:var(--shadow); transform:translateY(100px); opacity:0; transition:.24s ease; font-weight:650; z-index:100; }
     .toast.show { transform:translateY(0); opacity:1; }
     .login-screen { display:none; position:fixed; inset:0; z-index:10; place-items:center; padding:20px; background:radial-gradient(circle at 15% 0%,#1a3456 0,transparent 32rem),var(--canvas); }
     .auth-needed .app, .auth-needed .toast { display:none; }
@@ -99,7 +101,36 @@
     .login-card .brand { padding:0 0 24px; }.login-card h1 { font-size:27px; margin:7px 0; }.login-card p { color:var(--muted); }.login-card form { display:grid; gap:13px; margin-top:24px; }.login-card .btn { width:100%; margin-top:4px; }.login-error { min-height:18px; color:var(--danger); font-size:12px; }.login-back { display:block; color:var(--muted); text-align:center; margin-top:18px; font-size:12px; }.login-back:hover { color:var(--ink); }
     .game-card { display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--line); }
     .game-card:last-child { border:0; }.game-no { color:var(--primary); font-weight:800; font-size:12px; }.game-score { font-weight:800; text-align:right; }.game-meta { color:var(--muted); font-size:12px; }
-    @media (max-width:950px) { .app{grid-template-columns:1fr}.side-note{display:none} aside{height:auto;position:static;padding:15px;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 9px 13px}.nav{display:flex;overflow:auto}.nav button{width:auto;white-space:nowrap}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)} }
+
+    /* ─── Roster styles ─── */
+    .roster-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .roster-team-card { border:1px solid var(--line); border-radius:12px; background:linear-gradient(145deg,rgba(22,35,58,.95),rgba(15,25,42,.95)); overflow:hidden; }
+    .roster-team-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:rgba(11,20,36,.65); border-bottom:1px solid var(--line); }
+    .roster-team-header h3 { font-size:16px; color:var(--accent); }
+    .roster-player { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:10px 16px; border-bottom:1px solid rgba(39,54,80,.5); font-size:13px; }
+    .roster-player:last-child { border:0; }
+    .roster-player .role-badge { background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:3px 8px; font-size:11px; color:var(--muted); font-weight:700; }
+    .roster-add-form { display:grid; grid-template-columns:1fr auto auto; gap:8px; padding:12px 16px; background:rgba(11,20,36,.4); }
+    .roster-add-form input, .roster-add-form select { padding:7px 9px; font-size:12px; }
+    .add-team-form { display:grid; grid-template-columns:1fr auto; gap:10px; margin-bottom:18px; }
+    .add-team-form input { padding:10px 12px; }
+
+    /* ─── Hero dropdown (combobox) ─── */
+    .hero-combo { position:relative; }
+    .hero-combo input { width:100%; }
+    .hero-dropdown { position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; background:#0b1424; border:1px solid var(--accent); border-top:0; border-radius:0 0 7px 7px; z-index:50; display:none; }
+    .hero-dropdown.open { display:block; }
+    .hero-dropdown .hero-option { padding:7px 10px; cursor:pointer; font-size:13px; }
+    .hero-dropdown .hero-option:hover, .hero-dropdown .hero-option.highlighted { background:var(--panel-2); color:var(--ink); }
+    .hero-dropdown .hero-option .hero-role-tag { color:var(--muted); font-size:11px; margin-left:6px; }
+
+    /* ─── Connection status ─── */
+    .db-status { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); padding:8px 12px; }
+    .db-status .dot { width:7px; height:7px; border-radius:50%; }
+    .db-status .dot.online { background:var(--primary); }
+    .db-status .dot.offline { background:var(--danger); }
+
+    @media (max-width:950px) { .app{grid-template-columns:1fr}.side-note{display:none} aside{height:auto;position:static;padding:15px;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 9px 13px}.nav{display:flex;overflow:auto}.nav button{width:auto;white-space:nowrap}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}.roster-grid{grid-template-columns:1fr} }
     @media (max-width:640px) { main{padding:23px 14px 60px}.topbar{display:grid}.summary{grid-template-columns:repeat(2,1fr)}.form-grid,.draft-grid,.team-objectives{grid-template-columns:1fr}.objective-fields{grid-template-columns:repeat(4,1fr)} h1{font-size:26px}.topbar .actions{width:100%}.topbar .actions .btn{flex:1}.draft-team .draft-row{grid-template-columns:30px 1fr 1fr 52px;padding:7px}.draft-team .draft-row input{font-size:12px} }
   </style>
 </head>
@@ -110,14 +141,19 @@
       <div class="nav" aria-label="Main navigation">
         <a href="../index.html"><span class="icon">←</span> Public stats</a>
         <button class="active" data-view="dashboard"><span class="icon">▦</span> Dashboard</button>
+        <button data-view="roster"><span class="icon">♟</span> Roster</button>
         <button data-view="entry"><span class="icon">＋</span> Record a game</button>
         <button data-view="games"><span class="icon">◫</span> Game archive</button>
       </div>
-      <div class="side-note"><span class="eyebrow">Your data</span><br>Saved only in this browser. Export a backup after each match day.</div>
+      <div class="side-note" id="db-note">
+        <span class="eyebrow">Your data</span><br>
+        <span id="db-note-text">Connecting to database…</span>
+      </div>
     </aside>
     <main>
+      <!-- ═══ DASHBOARD ═══ -->
       <section id="dashboard" class="view active">
-        <div class="topbar"><div><div class="eyebrow">Admin workspace · Tournament control room</div><h1>Stats, without the spreadsheet sprawl.</h1><p class="sub">Your post-game screenshot becomes a clean, searchable match record.</p></div><div class="actions"><a class="btn" href="../index.html">Open public page</a><button class="btn" id="export-data">Export backup</button><button class="btn" id="logout">Sign out</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <div class="topbar"><div><div class="eyebrow">Admin workspace · Tournament control room</div><h1>Stats, without the spreadsheet sprawl.</h1><p class="sub">Your post-game screenshot becomes a clean, searchable match record.</p></div><div class="actions"><a class="btn" href="../index.html">Open public page</a><button class="btn" id="export-data">Export backup</button><button class="btn" id="import-data">Import backup</button><input type="file" id="import-file" accept=".json" style="display:none"><button class="btn" id="logout">Sign out</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
         <div class="summary" id="summary"></div>
         <div class="split">
           <article class="card"><div class="panel-head"><h2>Player leaderboard</h2><span class="muted">All recorded games</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Games</th><th>KDA</th><th>Win rate</th><th>Most played hero</th></tr></thead><tbody id="player-leaderboard"></tbody></table></div></article>
@@ -127,9 +163,20 @@
         <article class="card"><div class="panel-head"><h2>Hero snapshot</h2><span class="muted">Draft and performance totals</span></div><div class="table-wrap"><table><thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead><tbody id="hero-leaderboard"></tbody></table></div></article>
       </section>
 
+      <!-- ═══ ROSTER ═══ -->
+      <section id="roster" class="view">
+        <div class="topbar"><div><div class="eyebrow">Team management</div><h1>Team & Player Roster</h1><p class="sub">Register teams and players here. They'll auto-fill when recording games — no more typing the same names repeatedly.</p></div></div>
+        <div class="add-team-form">
+          <input id="new-team-name" placeholder="Enter new team name…">
+          <button class="btn primary" id="add-team-btn">＋ Add team</button>
+        </div>
+        <div class="roster-grid" id="roster-grid"></div>
+      </section>
+
+      <!-- ═══ RECORD A GAME ═══ -->
       <section id="entry" class="view">
         <div class="topbar"><div><div class="eyebrow">Post-game workflow</div><h1>Record one completed game</h1><p class="sub">Complete the scoreboard from your screenshot, then save. Required fields are marked with an asterisk.</p></div><div class="actions"><button class="btn" id="new-game">Start fresh</button><button class="btn primary" id="save-game">Save game record</button></div></div>
-        <div class="record-banner">Recommended order: fill the match details → draft → player scoreboard → final items. The screenshot is a visual reference only; it is not uploaded or saved.</div>
+        <div class="record-banner">Recommended order: fill the match details → draft → player scoreboard → final items. Select teams from the roster to auto-fill player names and roles.</div>
         <form id="game-form">
           <article class="card panel-body entry-section">
             <div class="section-title"><h2>1. Match details</h2><p>Everything needed to locate this game later.</p></div>
@@ -138,8 +185,16 @@
               <label>Stage / round *<input id="stage" placeholder="Group stage — Week 1" required></label>
               <label>Series opponent *<input id="opponent" placeholder="e.g. Nexus Five" required></label>
               <label>Game number *<input type="number" id="game-number" min="1" value="1" required></label>
-              <label>Our team *<input id="team-a" placeholder="Your team name" required></label>
-              <label>Opponent team *<input id="team-b" placeholder="Opponent team name" required></label>
+              <label>Our team *
+                <select id="team-a" required>
+                  <option value="">Select your team…</option>
+                </select>
+              </label>
+              <label>Opponent team *
+                <select id="team-b" required>
+                  <option value="">Select opponent team…</option>
+                </select>
+              </label>
               <label>Game duration <input id="duration" placeholder="MM:SS e.g. 16:42"></label>
               <label>Winner *<select id="winner" required><option value="">Select winning team</option><option value="a">Our team</option><option value="b">Opponent team</option></select></label>
               <label>MLBB patch <input id="patch" placeholder="e.g. 2.1.18"></label>
@@ -167,8 +222,9 @@
         </form>
       </section>
 
+      <!-- ═══ GAME ARCHIVE ═══ -->
       <section id="games" class="view">
-        <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All games recorded on this device.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all local data</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All recorded games synced across devices.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all data</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
         <article class="card" id="game-archive"></article>
       </section>
     </main>
@@ -187,65 +243,503 @@
     </div>
   </section>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Firebase SDK (compat for global namespace) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <!-- Shared modules -->
+  <script src="../firebase-config.js"></script>
+  <script src="../heroes.js"></script>
+  <script src="../db.js"></script>
+
   <script>
-    const STORE = 'matchbook-mlbb-v1';
+    /* ═══════════════════════════════════════════════════
+       MATCHBOOK ADMIN — Main application script
+       ═══════════════════════════════════════════════════ */
+
     const ADMIN_SESSION = 'matchbook-admin-session-v1';
     const slots = Array.from({length:10}, (_, i) => ({ side: i < 5 ? 'a' : 'b', slot: (i % 5) + 1 }));
-    let games = JSON.parse(localStorage.getItem(STORE) || '[]');
-    const $ = (selector) => document.querySelector(selector);
-    const esc = (value = '') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-    const number = (value) => Number(value) || 0;
-    const teamName = (side) => (side === 'a' ? $('#team-a').value.trim() || 'Team A' : $('#team-b').value.trim() || 'Team B');
-    function toast(message) { const box = $('#toast'); box.textContent = message; box.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => box.classList.remove('show'), 3200); }
-    function makeEntryRows() {
-      $('#scoreboard-body').innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? 'A' : 'B'}<br><span class="side-name">Team ${side === 'a' ? 'A' : 'B'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, ..."></td></tr>`).join('');
+    let games = [];
+    let roster = { teams:{}, players:{} };
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => document.querySelectorAll(s);
+    const esc = (v = '') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const num = (v) => Number(v) || 0;
+
+    function toast(msg) {
+      const box = $('#toast');
+      box.textContent = msg;
+      box.classList.add('show');
+      clearTimeout(window._tt);
+      window._tt = setTimeout(() => box.classList.remove('show'), 3200);
+    }
+
+    // ─── Team name helper ───
+    function teamName(side) {
+      const sel = side === 'a' ? $('#team-a') : $('#team-b');
+      if (sel.tagName === 'SELECT') {
+        return sel.options[sel.selectedIndex]?.text || (side === 'a' ? 'Team A' : 'Team B');
+      }
+      return sel.value.trim() || (side === 'a' ? 'Team A' : 'Team B');
+    }
+    function teamNameValue(side) {
+      const sel = side === 'a' ? $('#team-a') : $('#team-b');
+      if (sel.tagName === 'SELECT') {
+        const opt = sel.options[sel.selectedIndex];
+        return opt && opt.value ? opt.text : '';
+      }
+      return sel.value.trim();
+    }
+
+    // ═══ HERO COMBOBOX ═══
+    function setupHeroCombo(input) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'hero-combo';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'hero-dropdown';
+      wrapper.appendChild(dropdown);
+
+      let highlighted = -1;
+
+      function renderOptions(filter) {
+        const q = (filter || '').toLowerCase();
+        const matches = MLBB_HEROES.filter(h => h.toLowerCase().includes(q));
+        dropdown.innerHTML = matches.slice(0, 20).map((h, i) =>
+          `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || ''}</span></div>`
+        ).join('');
+        highlighted = -1;
+        if (matches.length > 0 && q.length > 0) {
+          dropdown.classList.add('open');
+        } else if (q.length === 0) {
+          dropdown.innerHTML = MLBB_HEROES.slice(0, 20).map(h =>
+            `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || ''}</span></div>`
+          ).join('');
+          dropdown.classList.add('open');
+        } else {
+          dropdown.classList.remove('open');
+        }
+      }
+
+      input.addEventListener('focus', () => renderOptions(input.value));
+      input.addEventListener('input', () => renderOptions(input.value));
+
+      input.addEventListener('keydown', e => {
+        const items = dropdown.querySelectorAll('.hero-option');
+        if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); updateHighlight(items); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); updateHighlight(items); }
+        else if (e.key === 'Enter' && highlighted >= 0 && items[highlighted]) { e.preventDefault(); selectHero(items[highlighted].dataset.hero); }
+        else if (e.key === 'Escape') { dropdown.classList.remove('open'); }
+      });
+
+      function updateHighlight(items) {
+        items.forEach((el, i) => el.classList.toggle('highlighted', i === highlighted));
+        if (items[highlighted]) items[highlighted].scrollIntoView({ block: 'nearest' });
+      }
+
+      function selectHero(name) {
+        input.value = name;
+        dropdown.classList.remove('open');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        // Move focus to next field
+        const row = input.closest('tr') || input.closest('.draft-row');
+        if (row) {
+          const next = row.querySelector('.role, .draft-role');
+          if (next) next.focus();
+        }
+      }
+
+      dropdown.addEventListener('click', e => {
+        const opt = e.target.closest('.hero-option');
+        if (opt) selectHero(opt.dataset.hero);
+      });
+
+      document.addEventListener('click', e => {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('open');
+      });
+    }
+
+    // ═══ ROSTER MANAGEMENT ═══
+    function renderRoster() {
+      const grid = $('#roster-grid');
+      const teams = Object.values(roster.teams);
+      const allPlayers = Object.values(roster.players);
+
+      if (teams.length === 0) {
+        grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No teams registered yet. Add your first team above.</div>';
+        return;
+      }
+
+      grid.innerHTML = teams.map(team => {
+        const players = allPlayers.filter(p => p.teamId === team.id);
+        return `
+          <div class="roster-team-card">
+            <div class="roster-team-header">
+              <h3>${esc(team.name)}</h3>
+              <div class="actions">
+                <button class="btn small danger" onclick="deleteTeam('${team.id}')">Delete</button>
+              </div>
+            </div>
+            ${players.map(p => `
+              <div class="roster-player">
+                <span><strong>${esc(p.name)}</strong></span>
+                <span class="role-badge">${esc(p.role || '—')}</span>
+                <button class="btn small danger" onclick="deletePlayer('${p.id}')">✕</button>
+              </div>
+            `).join('')}
+            <div class="roster-add-form">
+              <input placeholder="Player name" id="rp-name-${team.id}">
+              <select id="rp-role-${team.id}">
+                <option value="">Role</option>
+                <option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option>
+              </select>
+              <button class="btn small primary" onclick="addPlayer('${team.id}')">Add</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    window.addTeam = async function() {
+      const input = $('#new-team-name');
+      const name = input.value.trim();
+      if (!name) return toast('Enter a team name.');
+      const id = crypto.randomUUID();
+      await dbSaveTeam({ id, name });
+      input.value = '';
+      toast(`Team "${name}" added.`);
+    };
+
+    window.deleteTeam = async function(teamId) {
+      const team = roster.teams[teamId];
+      if (!confirm(`Delete team "${team?.name}" and all its players?`)) return;
+      await dbDeleteTeam(teamId);
+      toast('Team deleted.');
+    };
+
+    window.addPlayer = async function(teamId) {
+      const nameInput = $(`#rp-name-${teamId}`);
+      const roleSelect = $(`#rp-role-${teamId}`);
+      const name = nameInput.value.trim();
+      if (!name) return toast('Enter a player name.');
+      const id = crypto.randomUUID();
+      await dbSavePlayer({ id, name, teamId, role: roleSelect.value });
+      nameInput.value = '';
+      roleSelect.value = '';
+      toast(`Player "${name}" added.`);
+    };
+
+    window.deletePlayer = async function(playerId) {
+      await dbDeletePlayer(playerId);
+      toast('Player removed.');
+    };
+
+    // ═══ POPULATE TEAM SELECTS ═══
+    function populateTeamSelects() {
+      const teams = Object.values(roster.teams);
+      ['team-a', 'team-b'].forEach(id => {
+        const sel = $(`#${id}`);
+        const currentVal = sel.value;
+        // Keep first placeholder option
+        sel.innerHTML = '<option value="">Select team…</option>';
+        teams.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.textContent = t.name;
+          sel.appendChild(opt);
+        });
+        // Add "Other (type manually)" option
+        const otherOpt = document.createElement('option');
+        otherOpt.value = '__other__';
+        otherOpt.textContent = '— Type manually —';
+        sel.appendChild(otherOpt);
+        // Restore selection
+        if (currentVal) sel.value = currentVal;
+      });
+    }
+
+    // ═══ AUTO-FILL PLAYERS WHEN TEAM IS SELECTED ═══
+    function onTeamSelected(side) {
+      const sel = side === 'a' ? $('#team-a') : $('#team-b');
+      const teamId = sel.value;
+
+      if (teamId === '__other__') {
+        // Replace select with text input
+        const input = document.createElement('input');
+        input.id = sel.id;
+        input.placeholder = 'Type team name…';
+        input.required = true;
+        input.addEventListener('input', () => { updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
+        sel.parentNode.replaceChild(input, sel);
+        return;
+      }
+
+      if (!teamId) return;
+
+      // Get players for this team
+      const players = Object.values(roster.players).filter(p => p.teamId === teamId);
+      if (players.length === 0) return;
+
+      // Fill scoreboard rows
+      const rows = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`);
+      players.slice(0, 5).forEach((player, i) => {
+        if (rows[i]) {
+          rows[i].querySelector('.player').value = player.name;
+          rows[i].querySelector('.role').value = player.role || '';
+        }
+      });
+
+      // Fill draft rows
+      const draftBox = document.querySelector(`[data-draft-side="${side}"]`);
+      if (draftBox) {
+        const draftRows = draftBox.querySelectorAll('.draft-row');
+        players.slice(0, 5).forEach((player, i) => {
+          if (draftRows[i]) {
+            draftRows[i].querySelector('.draft-player').value = player.name;
+            draftRows[i].querySelector('.draft-role').value = player.role || '';
+          }
+        });
+      }
+
       updateTeamLabels();
-      $('#scoreboard-body').addEventListener('input', updateKdas);
+      updateDraftLabels();
+      updateObjectiveLabels();
+      toast(`Auto-filled ${players.length} player(s) for ${teamName(side)}.`);
     }
-    function makeDraft() { $('#draft-grid').innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Our team' : 'Opponent'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join(''); updateDraftLabels(); }
-    function makeObjectives() { $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Our team' : 'Opponent team'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join(''); updateObjectiveLabels(); }
-    function updateTeamLabels() { document.querySelectorAll('#scoreboard-body tr').forEach(row => { const side = row.dataset.side; row.querySelector('.side-name').textContent = teamName(side); }); }
-    function updateDraftLabels() { document.querySelectorAll('[data-draft-side]').forEach(box => { const side = box.dataset.draftSide; box.querySelector('h3').textContent = `${teamName(side)} picks`; }); }
-    function updateObjectiveLabels() { document.querySelectorAll('[data-objective-side]').forEach(box => { const side = box.dataset.objectiveSide; box.querySelector('h3').textContent = teamName(side); }); }
-    function updateKdas() { document.querySelectorAll('#scoreboard-body tr').forEach(row => { const k = number(row.querySelector('.kills').value), d = number(row.querySelector('.deaths').value), a = number(row.querySelector('.assists').value); row.querySelector('.kda-preview').textContent = ((k + a) / Math.max(1,d)).toFixed(1); }); }
-    function resetForm() { $('#game-form').reset(); $('#game-date').value = new Date().toISOString().slice(0,10); $('#game-number').value = 1; $('#screenshot-name').textContent = 'Optional local reference'; $('#screenshot-preview').style.display = 'none'; makeDraft(); makeObjectives(); makeEntryRows(); updateKdas(); }
+
+    // ═══ ENTRY FORM ═══
+    function makeEntryRows() {
+      const tbody = $('#scoreboard-body');
+      tbody.innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? 'A' : 'B'}<br><span class="side-name">Team ${side === 'a' ? 'A' : 'B'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero-input" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, …"></td></tr>`).join('');
+
+      // Setup hero comboboxes for scoreboard
+      tbody.querySelectorAll('.hero-input').forEach(setupHeroCombo);
+
+      updateTeamLabels();
+      tbody.addEventListener('input', updateKdas);
+    }
+
+    function makeDraft() {
+      const grid = $('#draft-grid');
+      grid.innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Our team' : 'Opponent'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join('');
+      // Setup hero comboboxes for draft
+      grid.querySelectorAll('.draft-hero').forEach(setupHeroCombo);
+      updateDraftLabels();
+    }
+
+    function makeObjectives() {
+      $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Our team' : 'Opponent team'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join('');
+      updateObjectiveLabels();
+    }
+
+    function updateTeamLabels() { $$('#scoreboard-body tr').forEach(row => { row.querySelector('.side-name').textContent = teamName(row.dataset.side); }); }
+    function updateDraftLabels() { $$('[data-draft-side]').forEach(box => { box.querySelector('h3').textContent = `${teamName(box.dataset.draftSide)} picks`; }); }
+    function updateObjectiveLabels() { $$('[data-objective-side]').forEach(box => { box.querySelector('h3').textContent = teamName(box.dataset.objectiveSide); }); }
+    function updateKdas() { $$('#scoreboard-body tr').forEach(row => { const k=num(row.querySelector('.kills').value), d=num(row.querySelector('.deaths').value), a=num(row.querySelector('.assists').value); row.querySelector('.kda-preview').textContent = ((k+a)/Math.max(1,d)).toFixed(1); }); }
+
+    function resetForm() {
+      $('#game-form').reset();
+      $('#game-date').value = new Date().toISOString().slice(0,10);
+      $('#game-number').value = 1;
+      $('#screenshot-name').textContent = 'Optional local reference';
+      $('#screenshot-preview').style.display = 'none';
+      // Restore selects if they were replaced with inputs
+      ['team-a','team-b'].forEach(id => {
+        const el = $(`#${id}`);
+        if (el.tagName === 'INPUT') {
+          const sel = document.createElement('select');
+          sel.id = id;
+          sel.required = true;
+          el.parentNode.replaceChild(sel, el);
+        }
+      });
+      populateTeamSelects();
+      makeDraft();
+      makeObjectives();
+      makeEntryRows();
+      updateKdas();
+    }
+
     function collectGame() {
-      const basic = { date: $('#game-date').value, stage: $('#stage').value.trim(), opponent: $('#opponent').value.trim(), gameNumber: number($('#game-number').value), teamA: $('#team-a').value.trim(), teamB: $('#team-b').value.trim(), duration: $('#duration').value.trim(), winner: $('#winner').value, patch: $('#patch').value.trim(), keeper: $('#keeper').value.trim() };
-      const stats = Array.from(document.querySelectorAll('#scoreboard-body tr')).map(row => ({ side:row.dataset.side, player:row.querySelector('.player').value.trim(), hero:row.querySelector('.hero').value.trim(), role:row.querySelector('.role').value, kills:number(row.querySelector('.kills').value), deaths:number(row.querySelector('.deaths').value), assists:number(row.querySelector('.assists').value), gold:number(row.querySelector('.gold').value), damage:number(row.querySelector('.damage').value), taken:number(row.querySelector('.taken').value), turret:number(row.querySelector('.turret').value), objective:number(row.querySelector('.objective').value), participation:number(row.querySelector('.participation').value), items:row.querySelector('.items').value.trim() }));
-      const draft = Array.from(document.querySelectorAll('[data-draft-side]')).flatMap(box => Array.from(box.querySelectorAll('.draft-row')).map((row, index) => ({side:box.dataset.draftSide, order:index+1, hero:row.querySelector('.draft-hero').value.trim(), player:row.querySelector('.draft-player').value.trim(), role:row.querySelector('.draft-role').value})).filter(p => p.hero || p.player));
-      const objectives = Array.from(document.querySelectorAll('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:number(box.querySelector('.towers').value), turtles:number(box.querySelector('.turtles').value), lords:number(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
-      return { id:crypto.randomUUID(), createdAt:new Date().toISOString(), ...basic, stats, draft, objectives };
+      const tA = teamNameValue('a') || 'Team A';
+      const tB = teamNameValue('b') || 'Team B';
+      const basic = { date: $('#game-date').value, stage: $('#stage').value.trim(), opponent: $('#opponent').value.trim(), gameNumber: num($('#game-number').value), teamA: tA, teamB: tB, duration: $('#duration').value.trim(), winner: $('#winner').value, patch: $('#patch').value.trim(), keeper: $('#keeper').value.trim() };
+      const stats = Array.from($$('#scoreboard-body tr')).map(row => ({
+        side: row.dataset.side,
+        player: row.querySelector('.player').value.trim(),
+        hero: row.querySelector('.hero-input').value.trim(),
+        role: row.querySelector('.role').value,
+        kills: num(row.querySelector('.kills').value),
+        deaths: num(row.querySelector('.deaths').value),
+        assists: num(row.querySelector('.assists').value),
+        gold: num(row.querySelector('.gold').value),
+        damage: num(row.querySelector('.damage').value),
+        taken: num(row.querySelector('.taken').value),
+        turret: num(row.querySelector('.turret').value),
+        objective: num(row.querySelector('.objective').value),
+        participation: num(row.querySelector('.participation').value),
+        items: row.querySelector('.items').value.trim()
+      }));
+      const draft = Array.from($$('[data-draft-side]')).flatMap(box => Array.from(box.querySelectorAll('.draft-row')).map((row, idx) => ({side:box.dataset.draftSide, order:idx+1, hero:row.querySelector('.draft-hero').value.trim(), player:row.querySelector('.draft-player').value.trim(), role:row.querySelector('.draft-role').value})).filter(p => p.hero || p.player));
+      const objectives = Array.from($$('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:num(box.querySelector('.towers').value), turtles:num(box.querySelector('.turtles').value), lords:num(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
+      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...basic, stats, draft, objectives };
     }
-    function validGame(game) { if (!game.date || !game.stage || !game.opponent || !game.teamA || !game.teamB || !game.winner) return 'Complete every required match detail.'; if (game.teamA.toLowerCase() === game.teamB.toLowerCase()) return 'Use two distinct team names.'; if (game.stats.some(s => !s.player || !s.hero)) return 'Enter a player and hero in every one of the ten scoreboard rows.'; const heroes = game.stats.map(s => s.hero.toLowerCase()); if (new Set(heroes).size !== heroes.length) return 'Each hero can only be picked once in a game.'; return ''; }
-    function saveGame(andNew = false) { const game = collectGame(); const issue = validGame(game); if (issue) { toast(issue); return; } games.unshift(game); localStorage.setItem(STORE, JSON.stringify(games)); render(); toast(`${game.teamA} vs ${game.teamB}, Game ${game.gameNumber} saved.`); if (andNew) { resetForm(); } else { showView('dashboard'); } }
-    function gameScore(game) { const a = game.stats.filter(s=>s.side==='a').reduce((sum,s)=>sum+s.kills,0), b = game.stats.filter(s=>s.side==='b').reduce((sum,s)=>sum+s.kills,0); return `${a} – ${b}`; }
+
+    function validGame(game) {
+      if (!game.date || !game.stage || !game.opponent || !game.teamA || !game.teamB || !game.winner) return 'Complete every required match detail.';
+      if (game.teamA.toLowerCase() === game.teamB.toLowerCase()) return 'Use two distinct team names.';
+      if (game.stats.some(s => !s.player || !s.hero)) return 'Enter a player and hero in every one of the ten scoreboard rows.';
+      const heroes = game.stats.map(s => s.hero.toLowerCase());
+      if (new Set(heroes).size !== heroes.length) return 'Each hero can only be picked once in a game.';
+      return '';
+    }
+
+    async function saveGame(andNew = false) {
+      const game = collectGame();
+      const issue = validGame(game);
+      if (issue) { toast(issue); return; }
+      await dbSaveGame(game);
+      toast(`${game.teamA} vs ${game.teamB}, Game ${game.gameNumber} saved.`);
+      if (andNew) { resetForm(); } else { showView('dashboard'); }
+    }
+
+    function gameScore(game) {
+      const a = game.stats.filter(s=>s.side==='a').reduce((n,s)=>n+s.kills,0);
+      const b = game.stats.filter(s=>s.side==='b').reduce((n,s)=>n+s.kills,0);
+      return `${a} – ${b}`;
+    }
     function displayWinner(game) { return game.winner === 'a' ? game.teamA : game.teamB; }
+
+    // ═══ RENDER DASHBOARD ═══
     function render() {
       const allStats = games.flatMap(g => g.stats.map(s => ({...s, won:s.side === g.winner, game:g})));
       const players = new Map(); const heroes = new Map();
-      allStats.forEach(s => { const key=s.player.toLowerCase(); if(!players.has(key)) players.set(key,{name:s.player,games:0,wins:0,k:0,d:0,a:0,heroes:{}}); const p=players.get(key); p.games++;p.wins+=s.won?1:0;p.k+=s.kills;p.d+=s.deaths;p.a+=s.assists;p.heroes[s.hero]=(p.heroes[s.hero]||0)+1; const hKey=s.hero.toLowerCase(); if(!heroes.has(hKey)) heroes.set(hKey,{name:s.hero,picks:0,wins:0,k:0,d:0,a:0,players:new Set()}); const h=heroes.get(hKey);h.picks++;h.wins+=s.won?1:0;h.k+=s.kills;h.d+=s.deaths;h.a+=s.assists;h.players.add(s.player); });
-      const totalKills = allStats.reduce((sum,s)=>sum+s.kills,0); const uniqueHeroes=heroes.size;
-      $('#summary').innerHTML = [{l:'Games recorded',v:games.length,c:games.length?'Your archive is growing':'Add your first game'},{l:'Teams recorded',v:new Set(games.flatMap(g=>[g.teamA,g.teamB])).size,c:'Across all series'},{l:'Heroes tracked',v:uniqueHeroes,c:'From final scoreboards'},{l:'Kills recorded',v:totalKills,c:'Combined team total'}].map(s=>`<article class="card stat"><div class="label">${s.l}</div><strong>${s.v}</strong><em>${s.c}</em></article>`).join('');
+      allStats.forEach(s => {
+        const key=s.player.toLowerCase();
+        if(!players.has(key)) players.set(key,{name:s.player,games:0,wins:0,k:0,d:0,a:0,heroes:{}});
+        const p=players.get(key); p.games++;p.wins+=s.won?1:0;p.k+=s.kills;p.d+=s.deaths;p.a+=s.assists;p.heroes[s.hero]=(p.heroes[s.hero]||0)+1;
+        const hKey=s.hero.toLowerCase();
+        if(!heroes.has(hKey)) heroes.set(hKey,{name:s.hero,picks:0,wins:0,k:0,d:0,a:0,players:new Set()});
+        const h=heroes.get(hKey);h.picks++;h.wins+=s.won?1:0;h.k+=s.kills;h.d+=s.deaths;h.a+=s.assists;h.players.add(s.player);
+      });
+      const totalKills = allStats.reduce((n,s)=>n+s.kills,0);
+      $('#summary').innerHTML = [{l:'Games recorded',v:games.length,c:games.length?'Your archive is growing':'Add your first game'},{l:'Teams recorded',v:new Set(games.flatMap(g=>[g.teamA,g.teamB])).size,c:'Across all series'},{l:'Heroes tracked',v:heroes.size,c:'From final scoreboards'},{l:'Kills recorded',v:totalKills,c:'Combined team total'}].map(s=>`<article class="card stat"><div class="label">${s.l}</div><strong>${s.v}</strong><em>${s.c}</em></article>`).join('');
+
       const playerRows=[...players.values()].sort((a,b)=>(b.k+b.a)/Math.max(1,b.d)-(a.k+a.a)/Math.max(1,a.d)).slice(0,8);
-      $('#player-leaderboard').innerHTML=playerRows.length?playerRows.map((p,i)=>{const hero=Object.entries(p.heroes).sort((a,b)=>b[1]-a[1])[0][0];return `<tr><td class="rank">${i+1}</td><td><strong>${esc(p.name)}</strong></td><td>${p.games}</td><td class="green">${((p.k+p.a)/Math.max(1,p.d)).toFixed(2)}</td><td>${Math.round(p.wins/p.games*100)}%</td><td class="hero">${esc(hero)}</td></tr>`}).join(''):`<tr><td colspan="6" class="empty">No player data yet. Record your first game to populate the leaderboard.</td></tr>`;
-      const heroRows=[...heroes.values()].sort((a,b)=>b.picks-a.picks || b.wins-a.wins).slice(0,8);
+      $('#player-leaderboard').innerHTML=playerRows.length?playerRows.map((p,i)=>{const hero=Object.entries(p.heroes).sort((a,b)=>b[1]-a[1])[0][0];return `<tr><td class="rank">${i+1}</td><td><strong>${esc(p.name)}</strong></td><td>${p.games}</td><td class="green">${((p.k+p.a)/Math.max(1,p.d)).toFixed(2)}</td><td>${Math.round(p.wins/p.games*100)}%</td><td class="hero">${esc(hero)}</td></tr>`}).join(''):`<tr><td colspan="6" class="empty">No player data yet. Record your first game.</td></tr>`;
+
+      const heroRows=[...heroes.values()].sort((a,b)=>b.picks-a.picks||b.wins-a.wins).slice(0,8);
       $('#hero-leaderboard').innerHTML=heroRows.length?heroRows.map(h=>`<tr><td class="hero">${esc(h.name)}</td><td>${h.picks}</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Hero statistics will appear here once a game is saved.</td></tr>`;
+
       $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} · Game ${g.gameNumber} · Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
-      $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration || 'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
+
+      $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration||'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
     }
-    function showView(id) { document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id)); document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id)); window.scrollTo({top:0,behavior:'smooth'}); }
+
+    // ═══ VIEW SWITCHING ═══
+    function showView(id) {
+      $$('.view').forEach(v => v.classList.toggle('active', v.id === id));
+      $$('.nav button').forEach(b => b.classList.toggle('active', b.dataset.view === id));
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    // ═══ AUTH ═══
     function unlockAdmin() { sessionStorage.setItem(ADMIN_SESSION, 'active'); document.body.classList.remove('auth-needed'); }
     if (sessionStorage.getItem(ADMIN_SESSION) === 'active') document.body.classList.remove('auth-needed');
-    $('#login-form').addEventListener('submit', event => { event.preventDefault(); const username=$('#login-username').value, password=$('#login-password').value; if (username === 'admin' && password === 'admin') { $('#login-error').textContent=''; unlockAdmin(); toast('Signed in to the admin workspace.'); } else { $('#login-error').textContent='Incorrect username or password.'; $('#login-password').value=''; $('#login-password').focus(); } });
+
+    $('#login-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const u = $('#login-username').value, p = $('#login-password').value;
+      if (u === 'admin' && p === 'admin') { $('#login-error').textContent=''; unlockAdmin(); toast('Signed in.'); }
+      else { $('#login-error').textContent='Incorrect username or password.'; $('#login-password').value=''; $('#login-password').focus(); }
+    });
     $('#logout').addEventListener('click', () => { sessionStorage.removeItem(ADMIN_SESSION); document.body.classList.add('auth-needed'); $('#login-form').reset(); $('#login-error').textContent=''; });
-    document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>showView(btn.dataset.view)));
-    document.querySelectorAll('[data-go-entry]').forEach(btn=>btn.addEventListener('click',()=>showView('entry')));
-    $('#team-a').addEventListener('input',()=>{updateTeamLabels();updateDraftLabels();updateObjectiveLabels()}); $('#team-b').addEventListener('input',()=>{updateTeamLabels();updateDraftLabels();updateObjectiveLabels()});
-    $('#game-form').addEventListener('submit',e=>{e.preventDefault();saveGame(false)}); $('#save-game').addEventListener('click',()=>saveGame(false)); $('#save-and-new').addEventListener('click',()=>saveGame(true)); $('#new-game').addEventListener('click',()=>{if(confirm('Clear the current unsaved game form?')) resetForm()});
-    $('#screenshot').addEventListener('change',e=>{const file=e.target.files[0]; if(!file)return; $('#screenshot-name').textContent=file.name; const preview=$('#screenshot-preview'); preview.src=URL.createObjectURL(file);preview.style.display='block';});
-    $('#export-data').addEventListener('click',()=>{const file=new Blob([JSON.stringify({exportedAt:new Date().toISOString(), games},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=`matchbook-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);toast('Backup exported. Keep it somewhere safe.');});
-    $('#clear-data').addEventListener('click',()=>{if(confirm('Permanently remove every local Matchbook game from this browser? Export a backup first.')){games=[];localStorage.removeItem(STORE);render();toast('All local Matchbook data was removed.')}});
-    resetForm(); render();
+
+    // ═══ NAV EVENTS ═══
+    $$('[data-view]').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
+    $$('[data-go-entry]').forEach(btn => btn.addEventListener('click', () => showView('entry')));
+
+    // ═══ TEAM SELECT EVENTS ═══
+    function setupTeamListeners() {
+      $('#team-a').addEventListener('change', () => { onTeamSelected('a'); updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
+      $('#team-b').addEventListener('change', () => { onTeamSelected('b'); updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
+    }
+
+    // ═══ FORM EVENTS ═══
+    $('#game-form').addEventListener('submit', e => { e.preventDefault(); saveGame(false); });
+    $('#save-game').addEventListener('click', () => saveGame(false));
+    $('#save-and-new').addEventListener('click', () => saveGame(true));
+    $('#new-game').addEventListener('click', () => { if (confirm('Clear the current unsaved game form?')) resetForm(); });
+    $('#screenshot').addEventListener('change', e => { const file=e.target.files[0]; if(!file)return; $('#screenshot-name').textContent=file.name; const preview=$('#screenshot-preview'); preview.src=URL.createObjectURL(file); preview.style.display='block'; });
+
+    // ═══ EXPORT / IMPORT ═══
+    $('#export-data').addEventListener('click', async () => {
+      const data = await dbExportAll();
+      const file = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = `matchbook-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('Backup exported.');
+    });
+
+    $('#import-data').addEventListener('click', () => $('#import-file').click());
+    $('#import-file').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        await dbImportAll(data);
+        toast(`Imported ${data.games?.length || 0} games.`);
+      } catch (err) {
+        toast('Failed to import: invalid file.');
+      }
+      e.target.value = '';
+    });
+
+    $('#clear-data').addEventListener('click', async () => {
+      if (confirm('Permanently remove ALL Matchbook data? Export a backup first.')) {
+        await dbClearGames();
+        toast('All data was cleared.');
+      }
+    });
+
+    // ═══ ROSTER EVENTS ═══
+    $('#add-team-btn').addEventListener('click', addTeam);
+    $('#new-team-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTeam(); } });
+
+    // ═══ INITIALIZE ═══
+    async function init() {
+      const online = await initDB();
+      const noteEl = $('#db-note');
+      const noteText = $('#db-note-text');
+      if (online) {
+        noteEl.classList.add('online');
+        noteText.innerHTML = '☁️ <strong>Online</strong> — Data syncs across all devices in real-time.';
+      } else {
+        noteText.innerHTML = '💾 <strong>Local only</strong> — Configure Firebase in firebase-config.js to enable online sync.';
+      }
+
+      // Listen for data changes
+      dbListenGames(updatedGames => {
+        games = updatedGames;
+        render();
+      });
+
+      dbListenRoster(updatedRoster => {
+        roster = updatedRoster;
+        renderRoster();
+        populateTeamSelects();
+      });
+
+      resetForm();
+      setupTeamListeners();
+    }
+
+    init();
   </script>
 </body>
 </html>
