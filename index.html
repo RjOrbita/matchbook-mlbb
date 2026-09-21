@@ -52,6 +52,9 @@
     .team-player-row .player-role{color:var(--muted);font-size:11px;font-weight:700;background:rgba(143,168,255,.1);border:1px solid rgba(143,168,255,.15);padding:2px 7px;border-radius:4px}
     .no-teams{padding:30px;text-align:center;color:var(--muted);background:linear-gradient(145deg,rgba(23,38,64,.95),rgba(15,25,43,.95));border:1px solid var(--line);border-radius:12px}
     .no-teams strong{display:block;color:var(--ink);margin-bottom:4px}
+    
+    .clickable-player { cursor:pointer; color:var(--accent); text-decoration:none; transition:color 0.15s; }
+    .clickable-player:hover { color:var(--ink); text-decoration:underline; }
 
     /* ─── Cards & tables ─── */
     .grid{display:grid;grid-template-columns:1.36fr .9fr;gap:17px;margin-bottom:17px}
@@ -167,11 +170,19 @@
       </div>
     </section>
     
-    <!-- ═══ MATCH DETAILS MODAL ═══ -->
+    <!-- ═══ MATCH MODAL ═══ -->
     <div id="match-modal" class="modal">
       <div class="modal-content">
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        <button class="modal-close" onclick="closeMatchModal()">✕</button>
         <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- ═══ PLAYER PROFILE MODAL ═══ -->
+    <div id="player-modal" class="modal">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closePlayerModal()">✕</button>
+        <div id="player-modal-body"></div>
       </div>
     </div>
 
@@ -199,6 +210,7 @@
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
     const esc = (v='') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const calcKda = (k, a, d) => ((k + a) / Math.max(1, d)).toFixed(2); // KDA = (Kills + Assists) / Deaths
 
     // ═══ PARTICIPATING TEAMS ═══
     function renderTeams() {
@@ -225,7 +237,7 @@
             <div class="team-player-list">
               ${players.length ? players.map(p => `
                 <div class="team-player-row">
-                  <span class="player-name">${esc(p.name)}</span>
+                  <span class="player-name clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>
                   ${p.role ? `<span class="player-role">${esc(p.role)}</span>` : ''}
                 </div>
               `).join('') : '<div style="padding:12px 16px;color:var(--muted);font-size:13px">No players registered</div>'}
@@ -303,7 +315,7 @@
 
       $('#players').innerHTML = sorted.map((p, i) => {
         const top = Object.entries(p.hero).sort((a,b) => b[1] - a[1])[0][0];
-        const kda = ((p.k+p.a)/Math.max(1,p.d)).toFixed(2);
+        const kda = calcKda(p.k, p.a, p.d);
         const wr = Math.round(p.wins/p.games*100) + '%';
 
         let cols;
@@ -315,7 +327,7 @@
           case 'games': cols = `<td class="green">${p.games}</td><td>${kda}</td><td>${wr}</td><td>${esc(top)}</td>`; break;
           default: cols = `<td>${p.games}</td><td class="green">${kda}</td><td>${wr}</td><td>${esc(top)}</td>`;
         }
-        return `<tr><td class="rank">${i+1}</td><td class="name">${esc(p.name)}</td>${cols}</tr>`;
+        return `<tr><td class="rank">${i+1}</td><td class="name"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span></td>${cols}</tr>`;
       }).join('');
     }
 
@@ -337,7 +349,7 @@
         return;
       }
 
-      $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`).join('');
+      $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${calcKda(h.k, h.a, h.d)}</td><td>${h.players.size}</td></tr>`).join('');
     }
 
     // ═══ RESULTS & MODAL ═══
@@ -372,7 +384,7 @@
             <thead><tr><th>Player</th><th>Hero</th><th>Role</th><th>KDA</th><th>Items</th></tr></thead>
             <tbody>
               ${stats.map(s => `<tr>
-                <td><strong>${esc(s.player)}</strong></td>
+                <td><strong><span class="clickable-player" onclick="showPlayerProfile('${esc(s.player)}')">${esc(s.player)}</span></strong></td>
                 <td>${esc(s.hero)}</td>
                 <td><span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px">${esc(s.role||'—')}</span></td>
                 <td>${s.kills} / ${s.deaths} / ${s.assists}</td>
@@ -397,16 +409,123 @@
       $('#match-modal').classList.add('open');
     };
     
-    window.closeModal = function() {
+    window.closeMatchModal = function() {
       $('#match-modal').classList.remove('open');
     };
 
-    // Close modal on background click or Esc key
+    // ═══ PLAYER PROFILE MODAL ═══
+    window.showPlayerProfile = function(playerName) {
+      window.closeMatchModal(); // ensure only one modal is active
+
+      const nameLower = playerName.toLowerCase();
+      let gamesPlayed = 0, wins = 0, totalK = 0, totalD = 0, totalA = 0;
+      const heroesMap = new Map();
+      const matchHistory = [];
+      let latestTeam = 'Unknown Team';
+
+      games.forEach(g => {
+        const pStat = g.stats.find(s => s.player.toLowerCase() === nameLower);
+        if (pStat) {
+          gamesPlayed++;
+          const won = pStat.side === g.winner;
+          if (won) wins++;
+          totalK += pStat.kills;
+          totalD += pStat.deaths;
+          totalA += pStat.assists;
+          latestTeam = pStat.side === 'a' ? g.teamA : g.teamB;
+          
+          const hName = pStat.hero;
+          if (!heroesMap.has(hName)) heroesMap.set(hName, { picks: 0, wins: 0, k:0, d:0, a:0 });
+          const h = heroesMap.get(hName);
+          h.picks++; h.wins += won ? 1 : 0; h.k += pStat.kills; h.d += pStat.deaths; h.a += pStat.assists;
+
+          matchHistory.push({
+            gameId: g.id,
+            date: g.date,
+            hero: pStat.hero,
+            k: pStat.kills, d: pStat.deaths, a: pStat.assists,
+            won: won,
+            enemy: pStat.side === 'a' ? g.teamB : g.teamA
+          });
+        }
+      });
+
+      if (gamesPlayed === 0) return;
+
+      const wr = Math.round((wins / gamesPlayed) * 100);
+      const overallKda = calcKda(totalK, totalA, totalD);
+      
+      const topHeroes = [...heroesMap.entries()].map(([name, stats]) => ({ name, ...stats }))
+        .sort((a,b) => b.picks - a.picks || b.wins - a.wins).slice(0, 6);
+
+      $('#player-modal-body').innerHTML = `
+        <div style="margin-bottom:25px">
+          <div style="color:var(--mint); font-size:12px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px">${esc(latestTeam)}</div>
+          <h2 style="font-size:28px; margin:0">${esc(playerName)}</h2>
+        </div>
+        
+        <div class="stats" style="margin-bottom:30px">
+          <article class="stat"><span>Games Played</span><strong>${gamesPlayed}</strong></article>
+          <article class="stat"><span>Win Rate</span><strong>${wr}%</strong></article>
+          <article class="stat"><span>Total K / D / A</span><strong>${totalK} / ${totalD} / ${totalA}</strong></article>
+          <article class="stat"><span>Overall KDA</span><strong class="green">${overallKda}</strong></article>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr; margin-bottom:0">
+          <div class="card" style="margin:0">
+            <div class="head"><h2>Top Heroes</h2></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Hero</th><th>Matches</th><th>WR</th><th>KDA</th></tr></thead>
+                <tbody>
+                  ${topHeroes.map(h => `<tr>
+                    <td><strong>${esc(h.name)}</strong></td>
+                    <td>${h.picks}</td>
+                    <td>${Math.round((h.wins/h.picks)*100)}%</td>
+                    <td class="green">${calcKda(h.k, h.a, h.d)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0">
+            <div class="head"><h2>Recent Matches</h2></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Hero</th><th>KDA</th><th>Result</th></tr></thead>
+                <tbody>
+                  ${matchHistory.slice(0, 6).map(m => `
+                    <tr style="cursor:pointer; transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'" onclick="closePlayerModal(); showMatchDetails('${m.gameId}')">
+                      <td class="muted">${esc(m.date)}</td>
+                      <td><strong>${esc(m.hero)}</strong></td>
+                      <td>${m.k}/${m.d}/${m.a}</td>
+                      <td>${m.won ? '<span class="green">Win</span>' : '<span style="color:var(--danger)">Loss</span>'} vs ${esc(m.enemy)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+      $('#player-modal').classList.add('open');
+    };
+
+    window.closePlayerModal = function() {
+      $('#player-modal').classList.remove('open');
+    };
+
+    // Close modals on background click or Esc key
     window.addEventListener('click', (e) => {
-      if (e.target.classList.contains('modal')) window.closeModal();
+      if (e.target.id === 'match-modal') window.closeMatchModal();
+      if (e.target.id === 'player-modal') window.closePlayerModal();
     });
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') window.closeModal();
+      if (e.key === 'Escape') {
+        window.closeMatchModal();
+        window.closePlayerModal();
+      }
     });
 
     // ═══ FULL RENDER ═══

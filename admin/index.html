@@ -252,6 +252,7 @@
   <!-- Shared modules -->
   <script src="../firebase-config.js"></script>
   <script src="../heroes.js"></script>
+  <script src="../items.js"></script>
   <script src="../db.js"></script>
 
   <script>
@@ -383,6 +384,73 @@
         if (opt) selectHero(opt.dataset.hero);
       });
 
+      document.addEventListener('click', e => {
+        if (!wrapper.contains(e.target)) dropdown.classList.remove('open');
+      });
+    }
+
+    // ═══ ITEM COMBOBOX ═══
+    function setupItemCombo(input) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'hero-combo';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'hero-dropdown';
+      wrapper.appendChild(dropdown);
+
+      let highlighted = -1;
+
+      function getCurrentTerm() {
+        const parts = input.value.split(',');
+        return parts[parts.length - 1].trim().toLowerCase();
+      }
+
+      function renderOptions() {
+        const q = getCurrentTerm();
+        const matches = MLBB_ITEMS.filter(i => i.toLowerCase().includes(q));
+        dropdown.innerHTML = matches.slice(0, 20).map(h => `<div class="hero-option" data-item="${esc(h)}">${esc(h)}</div>`).join('');
+        highlighted = -1;
+        if (matches.length > 0 && q.length > 0) {
+          dropdown.classList.add('open');
+        } else if (q.length === 0) {
+          dropdown.innerHTML = MLBB_ITEMS.slice(0, 20).map(h => `<div class="hero-option" data-item="${esc(h)}">${esc(h)}</div>`).join('');
+          dropdown.classList.add('open');
+        } else {
+          dropdown.classList.remove('open');
+        }
+      }
+
+      input.addEventListener('focus', renderOptions);
+      input.addEventListener('input', renderOptions);
+
+      input.addEventListener('keydown', e => {
+        const items = dropdown.querySelectorAll('.hero-option');
+        if (e.key === 'ArrowDown') { e.preventDefault(); highlighted = Math.min(highlighted + 1, items.length - 1); updateHighlight(items); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); highlighted = Math.max(highlighted - 1, 0); updateHighlight(items); }
+        else if (e.key === 'Enter' && highlighted >= 0 && items[highlighted]) { e.preventDefault(); selectItem(items[highlighted].dataset.item); }
+        else if (e.key === 'Escape') { dropdown.classList.remove('open'); }
+      });
+
+      function updateHighlight(items) {
+        items.forEach((el, i) => el.classList.toggle('highlighted', i === highlighted));
+        if (items[highlighted]) items[highlighted].scrollIntoView({ block: 'nearest' });
+      }
+
+      function selectItem(name) {
+        const parts = input.value.split(',');
+        parts.pop();
+        parts.push(' ' + name);
+        input.value = parts.join(',').trim() + ', ';
+        dropdown.classList.remove('open');
+        input.focus();
+      }
+
+      dropdown.addEventListener('click', e => {
+        const opt = e.target.closest('.hero-option');
+        if (opt) selectItem(opt.dataset.item);
+      });
       document.addEventListener('click', e => {
         if (!wrapper.contains(e.target)) dropdown.classList.remove('open');
       });
@@ -546,6 +614,7 @@
       const tbody = $('#scoreboard-body');
       tbody.innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? '1' : '2'}<br><span class="side-name">Team ${side === 'a' ? '1' : '2'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero-input" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, …"></td></tr>`).join('');
       tbody.querySelectorAll('.hero-input').forEach(setupHeroCombo);
+      tbody.querySelectorAll('.items').forEach(setupItemCombo);
       updateTeamLabels();
       tbody.addEventListener('input', updateKdas);
     }
