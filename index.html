@@ -104,6 +104,7 @@
     .match-screenshot{width:100%;max-height:450px;object-fit:contain;background:#060a12;border-radius:8px;margin-bottom:20px;border:1px solid var(--line)}
 
     @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px}}
+    .clickable-team:hover{transform:translateY(-4px);border-color:var(--mint);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
   </style>
 </head>
 <body>
@@ -187,6 +188,14 @@
       </div>
     </div>
 
+    <!-- ═══ TEAM PROFILE MODAL ═══ -->
+    <div id="team-modal" class="modal">
+      <div class="modal-content" style="max-width: 640px;">
+        <button class="modal-close" onclick="closeTeamModal()">✕</button>
+        <div id="team-modal-body"></div>
+      </div>
+    </div>
+
   </main>
   <footer class="shell footer">Matchbook · Real-time tournament view — data syncs across all devices</footer>
 
@@ -229,7 +238,7 @@
         const logoHtml = team.logo ? `<img src="${team.logo}">` : esc(team.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2));
         
         return `
-          <div class="team-card">
+          <div class="team-card clickable-team" onclick="showTeamProfile('${team.id}')" style="cursor:pointer; transition:transform 0.2s, box-shadow 0.2s;">
             <div class="team-card-header">
               <div class="team-icon">${logoHtml}</div>
               <h3>${esc(team.name)}</h3>
@@ -237,10 +246,10 @@
             </div>
             <div class="team-player-list">
               ${players.length ? players.map(p => `
-                <div class="team-player-row">
+                <div class="team-player-row" onclick="event.stopPropagation()">
                   ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--muted)">${esc(p.name.charAt(0).toUpperCase())}</div>`}
                   <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <span class="player-name clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>
+                    <span class="player-name clickable-player" onclick="event.stopPropagation(); showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>
                     ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1; margin-top:2px;">${esc(p.realName)}</span>` : ''}
                   </div>
                   ${p.role ? `<span class="player-role">${esc(p.role)}</span>` : ''}
@@ -389,6 +398,9 @@
     }
     
     window.showMatchDetails = function(gameId) {
+      if (window.closePlayerModal) window.closePlayerModal();
+      if (window.closeTeamModal) window.closeTeamModal();
+      
       const game = games.find(g => g.id === gameId);
       if (!game) return;
       const t1Stats = game.stats.filter(s => s.side === 'a');
@@ -448,9 +460,131 @@
       $('#match-modal').classList.remove('open');
     };
 
+    // ═══ TEAM PROFILE MODAL ═══
+    window.showTeamProfile = function(teamId) {
+      window.closeMatchModal();
+      window.closePlayerModal();
+
+      const team = roster.teams[teamId];
+      if (!team) return;
+
+      const teamPlayers = Object.values(roster.players).filter(p => p.teamId === teamId);
+      
+      let gamesPlayed = 0, wins = 0, totalK = 0, totalD = 0, totalA = 0;
+      let totalDurationSec = 0;
+      let validDurations = 0;
+      const heroesMap = new Map();
+
+      games.forEach(g => {
+        // game.teamA and game.teamB store the string names
+        const isTeamA = g.teamA === team.name;
+        const isTeamB = g.teamB === team.name;
+        if (!isTeamA && !isTeamB) return;
+
+        gamesPlayed++;
+        const won = (isTeamA && g.winner === 'a') || (isTeamB && g.winner === 'b');
+        if (won) wins++;
+
+        // Parse duration (assuming MM:SS format)
+        if (g.duration) {
+          const parts = g.duration.split(':');
+          if (parts.length === 2) {
+            totalDurationSec += parseInt(parts[0] || 0) * 60 + parseInt(parts[1] || 0);
+            validDurations++;
+          }
+        }
+
+        // Aggregate stats for this team's players in this game
+        const side = isTeamA ? 'a' : 'b';
+        g.stats.filter(s => s.side === side).forEach(s => {
+          totalK += s.kills;
+          totalD += s.deaths;
+          totalA += s.assists;
+
+          const hName = s.hero;
+          if (!heroesMap.has(hName)) heroesMap.set(hName, { picks: 0, wins: 0 });
+          const h = heroesMap.get(hName);
+          h.picks++;
+          if (won) h.wins++;
+        });
+      });
+
+      const wr = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
+      const overallKda = gamesPlayed > 0 ? calcKda(totalK, totalA, totalD) : '0.0';
+      const avgDuration = validDurations > 0 ? Math.round(totalDurationSec / validDurations) : 0;
+      const avgDurationStr = avgDuration > 0 ? `${Math.floor(avgDuration / 60)}:${(avgDuration % 60).toString().padStart(2, '0')}` : 'N/A';
+
+      const topHeroes = [...heroesMap.entries()].map(([name, stats]) => ({ name, ...stats }))
+        .sort((a,b) => b.picks - a.picks || b.wins - a.wins).slice(0, 5);
+
+      const logoHtml = team.logo 
+        ? `<img src="${team.logo}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); box-shadow:0 0 20px rgba(143,168,255,0.25)">` 
+        : `<div style="width:120px; height:120px; border-radius:50%; background:var(--surface2); border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:48px; color:var(--muted)">${esc(team.name.substring(0,2).toUpperCase())}</div>`;
+
+      $('#team-modal-body').innerHTML = `
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:20px;">
+          ${logoHtml}
+          <div>
+            <div style="color:var(--mint); font-size:12px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px">Team Profile</div>
+            <h2 style="font-size:32px; margin:0">${esc(team.name)}</h2>
+          </div>
+        </div>
+
+        <!-- Roster Row -->
+        <div style="margin-bottom:25px;">
+          <h3 style="font-size:13px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Active Roster</h3>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${teamPlayers.length ? teamPlayers.map(p => `
+              <div class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')" style="display:flex; align-items:center; gap:8px; background:var(--surface2); padding:6px 12px; border-radius:20px; border:1px solid var(--line);">
+                ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; font-size:10px;">${esc(p.name.charAt(0).toUpperCase())}</div>`}
+                <div>
+                  <div style="font-size:13px; font-weight:600; line-height:1;">${esc(p.name)}</div>
+                  ${p.realName ? `<div style="font-size:10px; color:var(--muted); line-height:1; margin-top:2px;">${esc(p.realName)}</div>` : ''}
+                </div>
+                ${p.role ? `<span style="font-size:10px; font-weight:700; color:var(--mint); background:rgba(113,231,189,0.1); padding:2px 6px; border-radius:4px; margin-left:4px;">${esc(p.role)}</span>` : ''}
+              </div>
+            `).join('') : '<span class="muted">No players assigned.</span>'}
+          </div>
+        </div>
+        
+        <div class="stats" style="margin-bottom:25px">
+          <article class="stat"><span>Games Played</span><strong>${gamesPlayed}</strong></article>
+          <article class="stat"><span>Win Rate</span><strong>${wr}%</strong></article>
+          <article class="stat"><span>Total K / D / A</span><strong>${totalK} / ${totalD} / ${totalA}</strong></article>
+          <article class="stat"><span>Avg Game Time</span><strong>${avgDurationStr}</strong></article>
+        </div>
+
+        <div class="card" style="margin:0">
+          <div class="head"><h2>Most Used Heroes</h2></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>Win Rate</th></tr></thead>
+              <tbody>
+                ${topHeroes.length ? topHeroes.map(h => `
+                  <tr>
+                    <td><strong>${esc(h.name)}</strong></td>
+                    <td>${h.picks}</td>
+                    <td>${h.wins}</td>
+                    <td>${Math.round(h.wins/h.picks*100)}%</td>
+                  </tr>
+                `).join('') : '<tr><td colspan="4" class="muted">No hero data.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      $('#team-modal').classList.add('open');
+    };
+
+    window.closeTeamModal = function() {
+      $('#team-modal').classList.remove('open');
+    };
+
     // ═══ PLAYER PROFILE MODAL ═══
     window.showPlayerProfile = function(playerName) {
-      window.closeMatchModal(); // ensure only one modal is active
+      if (window.closeMatchModal) window.closeMatchModal();
+      if (window.closeTeamModal) window.closeTeamModal();
 
       const nameLower = playerName.toLowerCase();
       let gamesPlayed = 0, wins = 0, totalK = 0, totalD = 0, totalA = 0;
@@ -467,20 +601,22 @@
           totalK += pStat.kills;
           totalD += pStat.deaths;
           totalA += pStat.assists;
-          latestTeam = pStat.side === 'a' ? g.teamA : g.teamB;
-          
-          const hName = pStat.hero;
-          if (!heroesMap.has(hName)) heroesMap.set(hName, { picks: 0, wins: 0, k:0, d:0, a:0 });
-          const h = heroesMap.get(hName);
-          h.picks++; h.wins += won ? 1 : 0; h.k += pStat.kills; h.d += pStat.deaths; h.a += pStat.assists;
 
+          const hName = pStat.hero;
+          if (!heroesMap.has(hName)) heroesMap.set(hName, { picks:0, wins:0, k:0, d:0, a:0 });
+          const h = heroesMap.get(hName);
+          h.picks++; if (won) h.wins++;
+          h.k += pStat.kills; h.d += pStat.deaths; h.a += pStat.assists;
+
+          const myTeam = pStat.side === 'a' ? g.teamA : g.teamB;
+          const oppTeam = pStat.side === 'a' ? g.teamB : g.teamA;
+          latestTeam = myTeam;
           matchHistory.push({
-            gameId: g.id,
+            id: g.id,
             date: g.date,
             hero: pStat.hero,
             k: pStat.kills, d: pStat.deaths, a: pStat.assists,
-            won: won,
-            enemy: pStat.side === 'a' ? g.teamB : g.teamA
+            won, oppTeam
           });
         }
       });
@@ -521,14 +657,9 @@
             <div class="head"><h2>Top Heroes</h2></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Hero</th><th>Matches</th><th>WR</th><th>KDA</th></tr></thead>
+                <thead><tr><th>Hero</th><th>Picks</th><th>WR</th><th>KDA</th></tr></thead>
                 <tbody>
-                  ${topHeroes.map(h => `<tr>
-                    <td><strong>${esc(h.name)}</strong></td>
-                    <td>${h.picks}</td>
-                    <td>${Math.round((h.wins/h.picks)*100)}%</td>
-                    <td class="green">${calcKda(h.k, h.a, h.d)}</td>
-                  </tr>`).join('')}
+                  ${topHeroes.map(h => `<tr><td><strong>${esc(h.name)}</strong></td><td>${h.picks}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${calcKda(h.k,h.a,h.d)}</td></tr>`).join('')}
                 </tbody>
               </table>
             </div>
@@ -538,14 +669,14 @@
             <div class="head"><h2>Recent Matches</h2></div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Date</th><th>Hero</th><th>KDA</th><th>Result</th></tr></thead>
+                <thead><tr><th>Match</th><th>Hero</th><th>KDA</th><th>Result</th></tr></thead>
                 <tbody>
-                  ${matchHistory.slice(0, 6).map(m => `
-                    <tr style="cursor:pointer; transition:background 0.15s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'" onclick="closePlayerModal(); showMatchDetails('${m.gameId}')">
-                      <td class="muted">${esc(m.date)}</td>
-                      <td><strong>${esc(m.hero)}</strong></td>
-                      <td>${m.k}/${m.d}/${m.a}</td>
-                      <td>${m.won ? '<span class="green">Win</span>' : '<span style="color:var(--danger)">Loss</span>'} vs ${esc(m.enemy)}</td>
+                  ${matchHistory.slice(-6).reverse().map(m => `
+                    <tr style="cursor:pointer" onclick="showMatchDetails('${m.id}')">
+                      <td>vs ${esc(m.oppTeam)}<div class="muted" style="font-size:11px">${esc(m.date)}</div></td>
+                      <td>${esc(m.hero)}</td>
+                      <td>${m.k} / ${m.d} / ${m.a}</td>
+                      <td style="color:${m.won?'var(--mint)':'var(--danger)'}"><strong>${m.won?'W':'L'}</strong></td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -565,11 +696,13 @@
     window.addEventListener('click', (e) => {
       if (e.target.id === 'match-modal') window.closeMatchModal();
       if (e.target.id === 'player-modal') window.closePlayerModal();
+      if (e.target.id === 'team-modal') window.closeTeamModal();
     });
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         window.closeMatchModal();
         window.closePlayerModal();
+        window.closeTeamModal();
       }
     });
 
