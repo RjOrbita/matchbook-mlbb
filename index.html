@@ -156,15 +156,16 @@
 
     <!-- ═══ HERO TRENDS ═══ -->
     <section class="card">
-      <div class="head"><h2>Hero trends</h2><span>Pick and performance totals</span></div>
+      <div class="head"><h2>Hero trends</h2><span>Pick, ban, and performance totals</span></div>
       <div class="lb-tabs" id="hero-tabs">
         <button class="lb-tab active" data-sort="picks">Most Picked</button>
+        <button class="lb-tab" data-sort="bans">Most Banned</button>
         <button class="lb-tab" data-sort="winrate">Win Rate</button>
         <button class="lb-tab" data-sort="kda">Best KDA</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead>
+          <thead><tr><th>Hero</th><th>Picks</th><th>Bans</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead>
           <tbody id="heroes"></tbody>
         </table>
       </div>
@@ -260,10 +261,23 @@
         p.hero[s.hero] = (p.hero[s.hero] || 0) + 1;
 
         const hkey = s.hero.toLowerCase();
-        if (!heroes.has(hkey)) heroes.set(hkey, {name:s.hero, picks:0, wins:0, k:0, d:0, a:0, players:new Set()});
+        if (!heroes.has(hkey)) heroes.set(hkey, {name:s.hero, picks:0, bans:0, wins:0, k:0, d:0, a:0, players:new Set()});
         const h = heroes.get(hkey);
         h.picks++; h.wins += s.won ? 1 : 0; h.k += s.kills; h.d += s.deaths; h.a += s.assists;
         h.players.add(s.player);
+      });
+
+      games.forEach(g => {
+        if (g.bans) {
+          ['a', 'b'].forEach(side => {
+            (g.bans[side] || []).forEach(heroName => {
+              const hkey = heroName.toLowerCase();
+              if (!heroes.has(hkey)) heroes.set(hkey, {name:heroName, picks:0, bans:0, wins:0, k:0, d:0, a:0, players:new Set()});
+              const h = heroes.get(hkey);
+              h.bans = (h.bans || 0) + 1;
+            });
+          });
+        }
       });
 
       return { all, players, heroes };
@@ -338,6 +352,7 @@
 
       const sorters = {
         picks:   (a, b) => b.picks - a.picks || b.wins - a.wins,
+        bans:    (a, b) => (b.bans || 0) - (a.bans || 0) || b.picks - a.picks,
         winrate: (a, b) => (b.wins/Math.max(1,b.picks)) - (a.wins/Math.max(1,a.picks)),
         kda:     (a, b) => ((b.k+b.a)/Math.max(1,b.d)) - ((a.k+a.a)/Math.max(1,a.d))
       };
@@ -345,11 +360,11 @@
       const sorted = heroArr.sort(sorters[sort] || sorters.picks).slice(0, 15);
 
       if (!sorted.length) {
-        $('#heroes').innerHTML = `<tr><td colspan="6"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
+        $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
         return;
       }
 
-      $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${calcKda(h.k, h.a, h.d)}</td><td>${h.players.size}</td></tr>`).join('');
+      $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--danger)">${h.bans || 0}</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${h.picks ? calcKda(h.k, h.a, h.d) : '—'}</td><td>${h.players.size}</td></tr>`).join('');
     }
 
     // ═══ RESULTS & MODAL ═══
@@ -377,8 +392,16 @@
       const score1 = t1Stats.reduce((n, s) => n + s.kills, 0);
       const score2 = t2Stats.reduce((n, s) => n + s.kills, 0);
 
-      const makeTable = (stats, sideName) => `
-        <h3 style="margin-top:20px;color:var(--mint);padding-left:11px">${esc(sideName)}</h3>
+      const bans1 = game.bans && game.bans.a && game.bans.a.length ? game.bans.a.join(', ') : 'None';
+      const bans2 = game.bans && game.bans.b && game.bans.b.length ? game.bans.b.join(', ') : 'None';
+
+      const makeTable = (stats, sideName, bans) => `
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:20px; padding:0 11px 8px;">
+          <h3 style="color:var(--mint); margin:0;">${esc(sideName)}</h3>
+          <div style="font-size:12px; color:var(--muted)">
+            <strong style="color:var(--danger)">Bans:</strong> ${esc(bans)}
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Player</th><th>Hero</th><th>Role</th><th>KDA</th><th>Items</th></tr></thead>
@@ -403,8 +426,8 @@
           <div class="muted" style="margin-top:8px">${esc(game.stage)} · Game ${game.gameNumber} · ${esc(game.date)}</div>
         </div>
         ${game.screenshot ? `<img src="${game.screenshot}" class="match-screenshot">` : '<div style="text-align:center; padding:30px; background:#060a12; border-radius:8px; border:1px solid var(--line); color:var(--muted); margin-bottom:20px; font-size:13px">No post-game screenshot uploaded for this match.</div>'}
-        ${makeTable(t1Stats, game.teamA)}
-        ${makeTable(t2Stats, game.teamB)}
+        ${makeTable(t1Stats, game.teamA, bans1)}
+        ${makeTable(t2Stats, game.teamB, bans2)}
       `;
       $('#match-modal').classList.add('open');
     };

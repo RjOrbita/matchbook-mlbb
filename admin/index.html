@@ -621,8 +621,21 @@
 
     function makeDraft() {
       const grid = $('#draft-grid');
-      grid.innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Team 1' : 'Team 2'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join('');
+      grid.innerHTML = ['a','b'].map(side => `
+        <div class="draft-team" data-draft-side="${side}">
+          <header><h3>${side === 'a' ? 'Team 1' : 'Team 2'} draft</h3></header>
+          <div style="padding:8px 10px; font-size:11px; color:var(--danger); background:rgba(255,133,150,0.06)"><strong>BANS</strong></div>
+          <div class="draft-bans" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; padding:10px;">
+            ${[1,2,3,4,5].map(n => `<input class="draft-ban" placeholder="B${n}" style="width:100%; font-size:11px; padding:6px; text-align:center;">`).join('')}
+          </div>
+          <div style="padding:8px 10px; font-size:11px; color:var(--primary); background:rgba(113,231,189,0.06); border-top:1px solid rgba(39,54,80,.7); display:flex; justify-content:space-between;">
+            <strong>PICKS</strong><span class="muted">Order • hero • player • role</span>
+          </div>
+          ${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}
+        </div>
+      `).join('');
       grid.querySelectorAll('.draft-hero').forEach(setupHeroCombo);
+      grid.querySelectorAll('.draft-ban').forEach(setupHeroCombo);
       updateDraftLabels();
     }
 
@@ -681,8 +694,16 @@
         items: row.querySelector('.items').value.trim()
       }));
       const draft = Array.from($$('[data-draft-side]')).flatMap(box => Array.from(box.querySelectorAll('.draft-row')).map((row, idx) => ({side:box.dataset.draftSide, order:idx+1, hero:row.querySelector('.draft-hero').value.trim(), player:row.querySelector('.draft-player').value.trim(), role:row.querySelector('.draft-role').value})).filter(p => p.hero || p.player));
+      
+      const boxA = $('[data-draft-side="a"]');
+      const boxB = $('[data-draft-side="b"]');
+      const bans = {
+        a: boxA ? Array.from(boxA.querySelectorAll('.draft-ban')).map(i => i.value.trim()).filter(Boolean) : [],
+        b: boxB ? Array.from(boxB.querySelectorAll('.draft-ban')).map(i => i.value.trim()).filter(Boolean) : []
+      };
+
       const objectives = Array.from($$('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:num(box.querySelector('.towers').value), turtles:num(box.querySelector('.turtles').value), lords:num(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
-      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), screenshot: currentScreenshotBase64, ...basic, stats, draft, objectives };
+      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), screenshot: currentScreenshotBase64, ...basic, stats, draft, bans, objectives };
     }
 
     function validGame(game) {
