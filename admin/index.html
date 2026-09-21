@@ -481,22 +481,24 @@
                 <button class="btn small danger" onclick="deleteTeam('${team.id}')">Delete</button>
               </div>
             </div>
-            ${players.map(p => `
-              <div class="roster-player">
-                <span><strong>${esc(p.name)}</strong></span>
-                <span class="role-badge">${esc(p.role || '—')}</span>
-                <button class="btn small danger" onclick="deletePlayer('${p.id}')">✕</button>
+              ${players.map(p => `
+                <div class="roster-player" style="display:flex; align-items:center; gap:8px;">
+                  ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
+                  <span><strong>${esc(p.name)}</strong></span>
+                  <span class="role-badge" style="margin-left:auto">${esc(p.role || '—')}</span>
+                  <button class="btn small danger" onclick="deletePlayer('${p.id}')">✕</button>
+                </div>
+              `).join('')}
+              <div class="add-player">
+                <input type="file" id="rp-photo-${team.id}" accept="image/*" style="width:90px; font-size:10px;" title="Player Photo">
+                <input class="rp-name" id="rp-name-${team.id}" placeholder="New player name...">
+                <select class="rp-role" id="rp-role-${team.id}">
+                  <option value="">Role</option>
+                  <option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option>
+                </select>
+                <button class="btn small primary" onclick="addPlayer('${team.id}')">Add</button>
               </div>
-            `).join('')}
-            <div class="roster-add-form">
-              <input placeholder="Player name" id="rp-name-${team.id}">
-              <select id="rp-role-${team.id}">
-                <option value="">Role</option>
-                <option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option>
-              </select>
-              <button class="btn small primary" onclick="addPlayer('${team.id}')">Add</button>
-            </div>
-          </div>`;
+            </div>`;
       }).join('');
     }
 
