@@ -280,8 +280,8 @@
     }
 
     // ─── Image Compression Utility ───
-    function fileToBase64(file, maxWidth, maxHeight, quality) {
-      return new Promise((resolve) => {
+    function fileToBase64(file, maxWidth = 1200, maxHeight = 1200, quality = 0.8) {
+      return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => {
           const img = new Image();
@@ -296,8 +296,10 @@
             ctx.drawImage(img, 0, 0, w, h);
             resolve(canvas.toDataURL('image/jpeg', quality));
           };
+          img.onerror = () => resolve(null);
           img.src = e.target.result;
         };
+        reader.onerror = () => resolve(null);
         reader.readAsDataURL(file);
       });
     }
@@ -530,13 +532,33 @@
     window.addPlayer = async function(teamId) {
       const nameInput = $(`#rp-name-${teamId}`);
       const roleSelect = $(`#rp-role-${teamId}`);
+      const fileInput = $(`#rp-photo-${teamId}`);
       const name = nameInput.value.trim();
       if (!name) return toast('Enter a player name.');
-      const id = crypto.randomUUID();
-      await dbSavePlayer({ id, name, teamId, role: roleSelect.value });
+      
+      let photo = null;
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          photo = await fileToBase64(fileInput.files[0], 300, 300, 0.8);
+          if (!photo) return toast('Unsupported image format. Please use JPG/PNG.');
+        } catch (err) {
+          return toast('Error processing image.');
+        }
+      }
+
+      // Check if player already exists in this team
+      const existing = Object.values(roster.players).find(p => p.name.toLowerCase() === name.toLowerCase() && p.teamId === teamId);
+      const id = existing ? existing.id : crypto.randomUUID();
+      
+      // Merge with existing photo if we didn't upload a new one
+      if (existing && !photo) photo = existing.photo;
+
+      await dbSavePlayer({ id, name, teamId, role: roleSelect.value, photo });
+      
       nameInput.value = '';
       roleSelect.value = '';
-      toast(`Player "${name}" added.`);
+      if (fileInput) fileInput.value = '';
+      toast(existing ? `Player "${name}" updated.` : `Player "${name}" added.`);
     };
 
     window.deletePlayer = async function(playerId) {
