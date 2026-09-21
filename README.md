@@ -79,9 +79,6 @@ matchbook-mlbb/
 └── README.md
 ```
 
-## Admin Login
-
-Default credentials: `orbitaadmin` / `uecesports`
 
 ## Usage Workflow
 
