@@ -103,7 +103,8 @@
     .modal-close:hover{color:var(--ink)}
     .match-screenshot{width:100%;max-height:450px;object-fit:contain;background:#060a12;border-radius:8px;margin-bottom:20px;border:1px solid var(--line)}
 
-    @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px}}
+    @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px}}
+    .grid-half{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-bottom:17px}
     .clickable-team:hover{transform:translateY(-4px);border-color:var(--mint);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
   </style>
 </head>
@@ -568,7 +569,7 @@
           <article class="stat"><span>Avg Game Time</span><strong>${avgDurationStr}</strong></article>
         </div>
 
-        <div class="grid" style="grid-template-columns:1fr 1fr; margin-bottom:0">
+        <div class="grid-half" style="margin-bottom:0">
           <div class="card" style="margin:0">
             <div class="head"><h2>Most Used Heroes</h2></div>
             <div class="table-wrap">
@@ -684,7 +685,7 @@
           <article class="stat"><span>Overall KDA</span><strong class="green">${overallKda}</strong></article>
         </div>
 
-        <div class="grid" style="grid-template-columns:1fr 1fr; margin-bottom:0">
+        <div class="grid-half" style="margin-bottom:0">
           <div class="card" style="margin:0">
             <div class="head"><h2>Top Heroes</h2></div>
             <div class="table-wrap">
