@@ -493,8 +493,8 @@
       const allPlayers = Object.values(roster.players);
       const matchedPlayer = allPlayers.find(p => p.name.toLowerCase() === nameLower);
       const photoHtml = matchedPlayer && matchedPlayer.photo 
-        ? `<img src="${matchedPlayer.photo}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); box-shadow:0 0 15px rgba(143,168,255,0.2)">`
-        : `<div style="width:80px; height:80px; border-radius:50%; background:var(--surface2); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:32px; color:var(--muted)">${esc(playerName.substring(0,1).toUpperCase())}</div>`;
+        ? `<img src="${matchedPlayer.photo}" style="width:140px; height:140px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); box-shadow:0 0 20px rgba(143,168,255,0.25)">`
+        : `<div style="width:140px; height:140px; border-radius:50%; background:var(--surface2); border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:56px; color:var(--muted)">${esc(playerName.substring(0,1).toUpperCase())}</div>`;
 
       $('#player-modal-body').innerHTML = `
         <div style="display:flex; align-items:center; gap:20px; margin-bottom:25px">
