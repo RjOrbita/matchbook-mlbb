@@ -474,6 +474,7 @@
       let totalDurationSec = 0;
       let validDurations = 0;
       const heroesMap = new Map();
+      const bansMap = new Map();
 
       games.forEach(g => {
         // game.teamA and game.teamB store the string names
@@ -494,8 +495,18 @@
           }
         }
 
-        // Aggregate stats for this team's players in this game
         const side = isTeamA ? 'a' : 'b';
+
+        // Track team bans
+        if (g.bans && g.bans[side]) {
+          g.bans[side].forEach(bName => {
+            if (bName) {
+              bansMap.set(bName, (bansMap.get(bName) || 0) + 1);
+            }
+          });
+        }
+
+        // Aggregate stats for this team's players in this game
         g.stats.filter(s => s.side === side).forEach(s => {
           totalK += s.kills;
           totalD += s.deaths;
@@ -516,6 +527,9 @@
 
       const topHeroes = [...heroesMap.entries()].map(([name, stats]) => ({ name, ...stats }))
         .sort((a,b) => b.picks - a.picks || b.wins - a.wins).slice(0, 5);
+
+      const topBans = [...bansMap.entries()].map(([name, bans]) => ({ name, bans }))
+        .sort((a,b) => b.bans - a.bans).slice(0, 5);
 
       const logoHtml = team.logo 
         ? `<img src="${team.logo}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); box-shadow:0 0 20px rgba(143,168,255,0.25)">` 
@@ -554,22 +568,40 @@
           <article class="stat"><span>Avg Game Time</span><strong>${avgDurationStr}</strong></article>
         </div>
 
-        <div class="card" style="margin:0">
-          <div class="head"><h2>Most Used Heroes</h2></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>Win Rate</th></tr></thead>
-              <tbody>
-                ${topHeroes.length ? topHeroes.map(h => `
-                  <tr>
-                    <td><strong>${esc(h.name)}</strong></td>
-                    <td>${h.picks}</td>
-                    <td>${h.wins}</td>
-                    <td>${Math.round(h.wins/h.picks*100)}%</td>
-                  </tr>
-                `).join('') : '<tr><td colspan="4" class="muted">No hero data.</td></tr>'}
-              </tbody>
-            </table>
+        <div class="grid" style="grid-template-columns:1fr 1fr; margin-bottom:0">
+          <div class="card" style="margin:0">
+            <div class="head"><h2>Most Used Heroes</h2></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Hero</th><th>Picks</th><th>Wins</th><th>WR</th></tr></thead>
+                <tbody>
+                  ${topHeroes.length ? topHeroes.map(h => `
+                    <tr>
+                      <td><strong>${esc(h.name)}</strong></td>
+                      <td>${h.picks}</td>
+                      <td>${h.wins}</td>
+                      <td>${Math.round(h.wins/Math.max(1,h.picks)*100)}%</td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="4" class="muted">No hero data.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card" style="margin:0">
+            <div class="head"><h2>Most Banned Heroes</h2></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Hero</th><th>Bans</th></tr></thead>
+                <tbody>
+                  ${topBans.length ? topBans.map(b => `
+                    <tr>
+                      <td><strong>${esc(b.name)}</strong></td>
+                      <td style="color:var(--danger)"><strong>${b.bans}</strong></td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="2" class="muted">No ban data.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       `;
