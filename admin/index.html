@@ -106,14 +106,17 @@
     .roster-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
     .roster-team-card { border:1px solid var(--line); border-radius:12px; background:linear-gradient(145deg,rgba(22,35,58,.95),rgba(15,25,42,.95)); overflow:hidden; }
     .roster-team-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:rgba(11,20,36,.65); border-bottom:1px solid var(--line); }
-    .roster-team-header h3 { font-size:16px; color:var(--accent); }
+    .roster-team-header h3 { font-size:16px; color:var(--accent); margin:0; }
     .roster-player { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; padding:10px 16px; border-bottom:1px solid rgba(39,54,80,.5); font-size:13px; }
     .roster-player:last-child { border:0; }
     .roster-player .role-badge { background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:3px 8px; font-size:11px; color:var(--muted); font-weight:700; }
     .roster-add-form { display:grid; grid-template-columns:1fr auto auto; gap:8px; padding:12px 16px; background:rgba(11,20,36,.4); }
     .roster-add-form input, .roster-add-form select { padding:7px 9px; font-size:12px; }
-    .add-team-form { display:grid; grid-template-columns:1fr auto; gap:10px; margin-bottom:18px; }
+    .add-team-form { display:grid; grid-template-columns:1fr auto auto; gap:10px; margin-bottom:18px; align-items:center; }
     .add-team-form input { padding:10px 12px; }
+    .add-team-form input[type=file] { padding:6px; max-width:200px; }
+    .team-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#d1d9ff);display:grid;place-items:center;font-weight:800;font-size:14px;color:#0b1120;overflow:hidden;flex-shrink:0}
+    .team-icon img{width:100%;height:100%;object-fit:cover}
 
     /* ─── Hero dropdown (combobox) ─── */
     .hero-combo { position:relative; }
@@ -168,6 +171,7 @@
         <div class="topbar"><div><div class="eyebrow">Team management</div><h1>Team & Player Roster</h1><p class="sub">Register teams and players here. They'll auto-fill when recording games — no more typing the same names repeatedly.</p></div></div>
         <div class="add-team-form">
           <input id="new-team-name" placeholder="Enter new team name…">
+          <input type="file" id="new-team-logo" accept="image/*" title="Team Logo (optional)">
           <button class="btn primary" id="add-team-btn">＋ Add team</button>
         </div>
         <div class="roster-grid" id="roster-grid"></div>
@@ -176,30 +180,28 @@
       <!-- ═══ RECORD A GAME ═══ -->
       <section id="entry" class="view">
         <div class="topbar"><div><div class="eyebrow">Post-game workflow</div><h1>Record one completed game</h1><p class="sub">Complete the scoreboard from your screenshot, then save. Required fields are marked with an asterisk.</p></div><div class="actions"><button class="btn" id="new-game">Start fresh</button><button class="btn primary" id="save-game">Save game record</button></div></div>
-        <div class="record-banner">Recommended order: fill the match details → draft → player scoreboard → final items. Select teams from the roster to auto-fill player names and roles.</div>
+        <div class="record-banner">Recommended order: fill the match details → draft → player scoreboard → final items. Select teams from the roster to auto-fill player names and roles. Draft heroes will auto-sync to the scoreboard.</div>
         <form id="game-form">
           <article class="card panel-body entry-section">
             <div class="section-title"><h2>1. Match details</h2><p>Everything needed to locate this game later.</p></div>
             <div class="form-grid">
               <label>Date *<input type="date" id="game-date" required></label>
               <label>Stage / round *<input id="stage" placeholder="Group stage — Week 1" required></label>
-              <label>Series opponent *<input id="opponent" placeholder="e.g. Nexus Five" required></label>
               <label>Game number *<input type="number" id="game-number" min="1" value="1" required></label>
-              <label>Our team *
+              <label>Team 1 *
                 <select id="team-a" required>
-                  <option value="">Select your team…</option>
+                  <option value="">Select Team 1…</option>
                 </select>
               </label>
-              <label>Opponent team *
+              <label>Team 2 *
                 <select id="team-b" required>
-                  <option value="">Select opponent team…</option>
+                  <option value="">Select Team 2…</option>
                 </select>
               </label>
               <label>Game duration <input id="duration" placeholder="MM:SS e.g. 16:42"></label>
-              <label>Winner *<select id="winner" required><option value="">Select winning team</option><option value="a">Our team</option><option value="b">Opponent team</option></select></label>
+              <label>Winner *<select id="winner" required><option value="">Select winning team</option><option value="a">Team 1</option><option value="b">Team 2</option></select></label>
               <label>MLBB patch <input id="patch" placeholder="e.g. 2.1.18"></label>
-              <label>Recorded by <input id="keeper" placeholder="Your name / alias"></label>
-              <label style="grid-column:span 2">Post-game screenshot <span class="screenshot"><img id="screenshot-preview" alt="Selected screenshot preview"><input type="file" id="screenshot" accept="image/*"><span id="screenshot-name">Optional local reference</span></span></label>
+              <label style="grid-column:span 4">Post-game screenshot <span class="screenshot"><img id="screenshot-preview" alt="Selected screenshot preview"><input type="file" id="screenshot" accept="image/*"><span id="screenshot-name">Upload to attach to game record</span></span></label>
             </div>
           </article>
 
@@ -261,6 +263,8 @@
     const slots = Array.from({length:10}, (_, i) => ({ side: i < 5 ? 'a' : 'b', slot: (i % 5) + 1 }));
     let games = [];
     let roster = { teams:{}, players:{} };
+    let currentScreenshotBase64 = null;
+
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => document.querySelectorAll(s);
     const esc = (v = '') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -274,13 +278,36 @@
       window._tt = setTimeout(() => box.classList.remove('show'), 3200);
     }
 
+    // ─── Image Compression Utility ───
+    function fileToBase64(file, maxWidth, maxHeight, quality) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+            if (h > maxHeight) { w = Math.round(w * maxHeight / h); h = maxHeight; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // ─── Team name helper ───
     function teamName(side) {
       const sel = side === 'a' ? $('#team-a') : $('#team-b');
       if (sel.tagName === 'SELECT') {
-        return sel.options[sel.selectedIndex]?.text || (side === 'a' ? 'Team A' : 'Team B');
+        return sel.options[sel.selectedIndex]?.text || (side === 'a' ? 'Team 1' : 'Team 2');
       }
-      return sel.value.trim() || (side === 'a' ? 'Team A' : 'Team B');
+      return sel.value.trim() || (side === 'a' ? 'Team 1' : 'Team 2');
     }
     function teamNameValue(side) {
       const sel = side === 'a' ? $('#team-a') : $('#team-b');
@@ -374,10 +401,14 @@
 
       grid.innerHTML = teams.map(team => {
         const players = allPlayers.filter(p => p.teamId === team.id);
+        const logoHtml = team.logo ? `<img src="${team.logo}">` : esc(team.name.substring(0,2).toUpperCase());
         return `
           <div class="roster-team-card">
             <div class="roster-team-header">
-              <h3>${esc(team.name)}</h3>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="team-icon">${logoHtml}</div>
+                <h3>${esc(team.name)}</h3>
+              </div>
               <div class="actions">
                 <button class="btn small danger" onclick="deleteTeam('${team.id}')">Delete</button>
               </div>
@@ -403,11 +434,19 @@
 
     window.addTeam = async function() {
       const input = $('#new-team-name');
+      const logoInput = $('#new-team-logo');
       const name = input.value.trim();
       if (!name) return toast('Enter a team name.');
+      
+      let logoUrl = null;
+      if (logoInput.files && logoInput.files[0]) {
+        logoUrl = await fileToBase64(logoInput.files[0], 128, 128, 0.85);
+      }
+
       const id = crypto.randomUUID();
-      await dbSaveTeam({ id, name });
+      await dbSaveTeam({ id, name, logo: logoUrl });
       input.value = '';
+      logoInput.value = '';
       toast(`Team "${name}" added.`);
     };
 
@@ -441,20 +480,18 @@
       ['team-a', 'team-b'].forEach(id => {
         const sel = $(`#${id}`);
         const currentVal = sel.value;
-        // Keep first placeholder option
-        sel.innerHTML = '<option value="">Select team…</option>';
+        const sideLabel = id === 'team-a' ? 'Team 1' : 'Team 2';
+        sel.innerHTML = `<option value="">Select ${sideLabel}…</option>`;
         teams.forEach(t => {
           const opt = document.createElement('option');
           opt.value = t.id;
           opt.textContent = t.name;
           sel.appendChild(opt);
         });
-        // Add "Other (type manually)" option
         const otherOpt = document.createElement('option');
         otherOpt.value = '__other__';
         otherOpt.textContent = '— Type manually —';
         sel.appendChild(otherOpt);
-        // Restore selection
         if (currentVal) sel.value = currentVal;
       });
     }
@@ -465,7 +502,6 @@
       const teamId = sel.value;
 
       if (teamId === '__other__') {
-        // Replace select with text input
         const input = document.createElement('input');
         input.id = sel.id;
         input.placeholder = 'Type team name…';
@@ -477,11 +513,9 @@
 
       if (!teamId) return;
 
-      // Get players for this team
       const players = Object.values(roster.players).filter(p => p.teamId === teamId);
       if (players.length === 0) return;
 
-      // Fill scoreboard rows
       const rows = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`);
       players.slice(0, 5).forEach((player, i) => {
         if (rows[i]) {
@@ -490,7 +524,6 @@
         }
       });
 
-      // Fill draft rows
       const draftBox = document.querySelector(`[data-draft-side="${side}"]`);
       if (draftBox) {
         const draftRows = draftBox.querySelectorAll('.draft-row');
@@ -511,25 +544,21 @@
     // ═══ ENTRY FORM ═══
     function makeEntryRows() {
       const tbody = $('#scoreboard-body');
-      tbody.innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? 'A' : 'B'}<br><span class="side-name">Team ${side === 'a' ? 'A' : 'B'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero-input" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, …"></td></tr>`).join('');
-
-      // Setup hero comboboxes for scoreboard
+      tbody.innerHTML = slots.map(({side, slot}) => `<tr data-side="${side}"><td class="team-cell">${side === 'a' ? '1' : '2'}<br><span class="side-name">Team ${side === 'a' ? '1' : '2'}</span></td><td><input class="player" required placeholder="Player ${slot}"></td><td><input class="hero-input" required placeholder="Hero"></td><td><select class="role"><option value="">—</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></td><td><input class="kills numeric" type="number" min="0" value="0"></td><td><input class="deaths numeric" type="number" min="0" value="0"></td><td><input class="assists numeric" type="number" min="0" value="0"></td><td class="kda-preview">0.0</td><td><input class="gold numeric" type="number" min="0" placeholder="0"></td><td><input class="damage numeric" type="number" min="0" placeholder="0"></td><td><input class="taken numeric" type="number" min="0" placeholder="0"></td><td><input class="turret numeric" type="number" min="0" placeholder="0"></td><td><input class="objective numeric" type="number" min="0" placeholder="0"></td><td><input class="participation numeric" type="number" min="0" max="100" placeholder="0"></td><td><input class="items wide" placeholder="e.g. Arcane Boots, …"></td></tr>`).join('');
       tbody.querySelectorAll('.hero-input').forEach(setupHeroCombo);
-
       updateTeamLabels();
       tbody.addEventListener('input', updateKdas);
     }
 
     function makeDraft() {
       const grid = $('#draft-grid');
-      grid.innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Our team' : 'Opponent'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join('');
-      // Setup hero comboboxes for draft
+      grid.innerHTML = ['a','b'].map(side => `<div class="draft-team" data-draft-side="${side}"><header><h3>${side === 'a' ? 'Team 1' : 'Team 2'} picks</h3><span class="muted">Order • hero • player • role</span></header>${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}</div>`).join('');
       grid.querySelectorAll('.draft-hero').forEach(setupHeroCombo);
       updateDraftLabels();
     }
 
     function makeObjectives() {
-      $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Our team' : 'Opponent team'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join('');
+      $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Team 1' : 'Team 2'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join('');
       updateObjectiveLabels();
     }
 
@@ -542,9 +571,10 @@
       $('#game-form').reset();
       $('#game-date').value = new Date().toISOString().slice(0,10);
       $('#game-number').value = 1;
-      $('#screenshot-name').textContent = 'Optional local reference';
+      $('#screenshot-name').textContent = 'Upload to attach to game record';
       $('#screenshot-preview').style.display = 'none';
-      // Restore selects if they were replaced with inputs
+      currentScreenshotBase64 = null;
+      
       ['team-a','team-b'].forEach(id => {
         const el = $(`#${id}`);
         if (el.tagName === 'INPUT') {
@@ -562,9 +592,9 @@
     }
 
     function collectGame() {
-      const tA = teamNameValue('a') || 'Team A';
-      const tB = teamNameValue('b') || 'Team B';
-      const basic = { date: $('#game-date').value, stage: $('#stage').value.trim(), opponent: $('#opponent').value.trim(), gameNumber: num($('#game-number').value), teamA: tA, teamB: tB, duration: $('#duration').value.trim(), winner: $('#winner').value, patch: $('#patch').value.trim(), keeper: $('#keeper').value.trim() };
+      const tA = teamNameValue('a') || 'Team 1';
+      const tB = teamNameValue('b') || 'Team 2';
+      const basic = { date: $('#game-date').value, stage: $('#stage').value.trim(), gameNumber: num($('#game-number').value), teamA: tA, teamB: tB, duration: $('#duration').value.trim(), winner: $('#winner').value, patch: $('#patch').value.trim() };
       const stats = Array.from($$('#scoreboard-body tr')).map(row => ({
         side: row.dataset.side,
         player: row.querySelector('.player').value.trim(),
@@ -583,11 +613,11 @@
       }));
       const draft = Array.from($$('[data-draft-side]')).flatMap(box => Array.from(box.querySelectorAll('.draft-row')).map((row, idx) => ({side:box.dataset.draftSide, order:idx+1, hero:row.querySelector('.draft-hero').value.trim(), player:row.querySelector('.draft-player').value.trim(), role:row.querySelector('.draft-role').value})).filter(p => p.hero || p.player));
       const objectives = Array.from($$('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:num(box.querySelector('.towers').value), turtles:num(box.querySelector('.turtles').value), lords:num(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
-      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...basic, stats, draft, objectives };
+      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), screenshot: currentScreenshotBase64, ...basic, stats, draft, objectives };
     }
 
     function validGame(game) {
-      if (!game.date || !game.stage || !game.opponent || !game.teamA || !game.teamB || !game.winner) return 'Complete every required match detail.';
+      if (!game.date || !game.stage || !game.teamA || !game.teamB || !game.winner) return 'Complete every required match detail.';
       if (game.teamA.toLowerCase() === game.teamB.toLowerCase()) return 'Use two distinct team names.';
       if (game.stats.some(s => !s.player || !s.hero)) return 'Enter a player and hero in every one of the ten scoreboard rows.';
       const heroes = game.stats.map(s => s.hero.toLowerCase());
@@ -666,12 +696,40 @@
       $('#team-b').addEventListener('change', () => { onTeamSelected('b'); updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
     }
 
-    // ═══ FORM EVENTS ═══
+    // ═══ FORM EVENTS & SYNC ═══
+    $('#game-form').addEventListener('input', e => {
+      if (e.target.classList.contains('hero-input') || e.target.classList.contains('draft-hero')) {
+        const row = e.target.closest('tr') || e.target.closest('.draft-row');
+        const playerName = row.querySelector('.player, .draft-player')?.value.trim();
+        const heroName = e.target.value.trim();
+        if (!playerName || !heroName) return;
+
+        $$('.draft-row').forEach(dr => {
+          if (dr !== row && dr.querySelector('.draft-player').value.trim() === playerName) {
+            dr.querySelector('.draft-hero').value = heroName;
+          }
+        });
+        $$('#scoreboard-body tr').forEach(tr => {
+          if (tr !== row && tr.querySelector('.player').value.trim() === playerName) {
+            tr.querySelector('.hero-input').value = heroName;
+          }
+        });
+      }
+    });
+
     $('#game-form').addEventListener('submit', e => { e.preventDefault(); saveGame(false); });
     $('#save-game').addEventListener('click', () => saveGame(false));
     $('#save-and-new').addEventListener('click', () => saveGame(true));
     $('#new-game').addEventListener('click', () => { if (confirm('Clear the current unsaved game form?')) resetForm(); });
-    $('#screenshot').addEventListener('change', e => { const file=e.target.files[0]; if(!file)return; $('#screenshot-name').textContent=file.name; const preview=$('#screenshot-preview'); preview.src=URL.createObjectURL(file); preview.style.display='block'; });
+    $('#screenshot').addEventListener('change', async e => { 
+      const file = e.target.files[0]; 
+      if (!file) return; 
+      $('#screenshot-name').textContent = file.name; 
+      const preview = $('#screenshot-preview'); 
+      preview.src = URL.createObjectURL(file); 
+      preview.style.display = 'block'; 
+      currentScreenshotBase64 = await fileToBase64(file, 1280, 720, 0.7);
+    });
 
     // ═══ EXPORT / IMPORT ═══
     $('#export-data').addEventListener('click', async () => {
@@ -723,7 +781,6 @@
         noteText.innerHTML = '💾 <strong>Local only</strong> — Configure Firebase in firebase-config.js to enable online sync.';
       }
 
-      // Listen for data changes
       dbListenGames(updatedGames => {
         games = updatedGames;
         render();
