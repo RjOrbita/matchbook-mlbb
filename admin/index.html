@@ -476,7 +476,10 @@
           <div class="roster-team-card">
             <div class="roster-team-header">
               <div style="display:flex;align-items:center;gap:10px">
-                <div class="team-icon">${logoHtml}</div>
+                <label class="team-icon" style="cursor:pointer; position:relative;" title="Update Team Logo">
+                  ${logoHtml}
+                  <input type="file" accept="image/*" style="display:none;" onchange="updateTeamLogo('${team.id}', this)">
+                </label>
                 <h3>${esc(team.name)}</h3>
               </div>
               <div class="actions">
@@ -485,7 +488,10 @@
             </div>
               ${players.map(p => `
                 <div class="roster-player" style="display:flex; align-items:center; gap:8px;">
-                  ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
+                  <label style="cursor:pointer; display:block; position:relative; width:24px; height:24px; flex-shrink:0;" title="Update Photo">
+                    ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
+                    <input type="file" accept="image/*" style="display:none;" onchange="updatePlayerPhoto('${p.id}', this)">
+                  </label>
                   <span style="display:flex; flex-direction:column; justify-content:center;">
                     <strong>${esc(p.name)}</strong>
                     ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1;">${esc(p.realName)}</span>` : ''}
@@ -531,6 +537,32 @@
       if (!confirm(`Delete team "${team?.name}" and all its players?`)) return;
       await dbDeleteTeam(teamId);
       toast('Team deleted.');
+    };
+
+    window.updateTeamLogo = async function(teamId, input) {
+      if (!input.files || !input.files[0]) return;
+      try {
+        const logoUrl = await fileToBase64(input.files[0], 128, 128, 0.85);
+        if (!logoUrl) return toast('Unsupported image format. Please use JPG/PNG.');
+        const team = roster.teams[teamId];
+        await dbSaveTeam({ ...team, logo: logoUrl });
+        toast(`Logo updated for ${team.name}.`);
+      } catch (err) {
+        toast('Error processing image.');
+      }
+    };
+
+    window.updatePlayerPhoto = async function(playerId, input) {
+      if (!input.files || !input.files[0]) return;
+      try {
+        const photo = await fileToBase64(input.files[0], 300, 300, 0.8);
+        if (!photo) return toast('Unsupported image format. Please use JPG/PNG.');
+        const player = roster.players[playerId];
+        await dbSavePlayer({ ...player, photo });
+        toast(`Photo updated for ${player.name}.`);
+      } catch (err) {
+        toast('Error processing image.');
+      }
     };
 
     window.addPlayer = async function(teamId) {
