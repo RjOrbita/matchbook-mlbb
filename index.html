@@ -103,7 +103,7 @@
     .modal-close:hover{color:var(--ink)}
     .match-screenshot{width:100%;max-height:450px;object-fit:contain;background:#060a12;border-radius:8px;margin-bottom:20px;border:1px solid var(--line)}
 
-    @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px}}
+    @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px} th,td{padding:9px 5px;font-size:11px}}
     .grid-half{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-bottom:17px}
     .clickable-team:hover{transform:translateY(-4px);border-color:var(--mint);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
   </style>
@@ -412,14 +412,6 @@
       const bans1 = game.bans && game.bans.a && game.bans.a.length ? game.bans.a.join(', ') : 'None';
       const bans2 = game.bans && game.bans.b && game.bans.b.length ? game.bans.b.join(', ') : 'None';
 
-      const renderItems = (itemsString) => {
-        if (!itemsString) return '<span class="muted">—</span>';
-        return itemsString.split(',').filter(i=>i.trim()).map(i => {
-          const name = i.trim();
-          return `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=172640&color=72e7bd&rounded=true&size=32&font-size=0.33" title="${esc(name)}" alt="${esc(name)}" style="width:24px; height:24px; margin-right:4px; vertical-align:middle; border:1px solid var(--line); border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.5);">`;
-        }).join('');
-      };
-
       const makeTable = (stats, sideName, bans) => `
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:20px; padding:0 11px 8px;">
           <h3 style="color:var(--mint); margin:0;">${esc(sideName)}</h3>
@@ -429,14 +421,13 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Player</th><th>Hero</th><th>Role</th><th>KDA</th><th>Items</th></tr></thead>
+            <thead><tr><th>Player</th><th>Hero</th><th>Role</th><th>KDA</th></tr></thead>
             <tbody>
               ${stats.map(s => `<tr>
                 <td><strong><span class="clickable-player" onclick="showPlayerProfile('${esc(s.player)}')">${esc(s.player)}</span></strong></td>
                 <td>${esc(s.hero)}</td>
                 <td><span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px">${esc(s.role||'—')}</span></td>
                 <td>${s.kills} / ${s.deaths} / ${s.assists}</td>
-                <td>${renderItems(s.items)}</td>
               </tr>`).join('')}
             </tbody>
           </table>
