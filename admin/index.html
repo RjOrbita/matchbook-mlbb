@@ -642,29 +642,53 @@
         input.required = true;
         input.addEventListener('input', () => { updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
         sel.parentNode.replaceChild(input, sel);
+        // We revert player selects to inputs in custom teams
+        revertPlayerSelectsToInputs(side);
         return;
       }
 
       if (!teamId) return;
 
       const players = Object.values(roster.players).filter(p => p.teamId === teamId);
-      if (players.length === 0) return;
-
+      
       const rows = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`);
-      players.slice(0, 5).forEach((player, i) => {
-        if (rows[i]) {
-          rows[i].querySelector('.player').value = player.name;
-          rows[i].querySelector('.role').value = player.role || '';
+      rows.forEach((row, i) => {
+        const pInput = row.querySelector('.player');
+        if (players.length > 0) {
+          const select = document.createElement('select');
+          select.className = pInput.className;
+          select.required = pInput.required;
+          select.innerHTML = '<option value="">Select Player</option>' + players.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+          if (players[i]) select.value = players[i].name;
+          
+          select.addEventListener('change', (e) => {
+            const selectedP = players.find(p => p.name === e.target.value);
+            if (selectedP) row.querySelector('.role').value = selectedP.role || '';
+          });
+          
+          pInput.parentNode.replaceChild(select, pInput);
+          row.querySelector('.role').value = players[i] ? (players[i].role || '') : '';
         }
       });
 
       const draftBox = document.querySelector(`[data-draft-side="${side}"]`);
       if (draftBox) {
         const draftRows = draftBox.querySelectorAll('.draft-row');
-        players.slice(0, 5).forEach((player, i) => {
-          if (draftRows[i]) {
-            draftRows[i].querySelector('.draft-player').value = player.name;
-            draftRows[i].querySelector('.draft-role').value = player.role || '';
+        draftRows.forEach((row, i) => {
+          const dInput = row.querySelector('.draft-player');
+          if (players.length > 0) {
+            const select = document.createElement('select');
+            select.className = dInput.className;
+            select.innerHTML = '<option value="">Player</option>' + players.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+            if (players[i]) select.value = players[i].name;
+            
+            select.addEventListener('change', (e) => {
+              const selectedP = players.find(p => p.name === e.target.value);
+              if (selectedP) row.querySelector('.draft-role').value = selectedP.role || '';
+            });
+            
+            dInput.parentNode.replaceChild(select, dInput);
+            row.querySelector('.draft-role').value = players[i] ? (players[i].role || '') : '';
           }
         });
       }
@@ -672,7 +696,37 @@
       updateTeamLabels();
       updateDraftLabels();
       updateObjectiveLabels();
-      toast(`Auto-filled ${players.length} player(s) for ${teamName(side)}.`);
+      toast(`Auto-filled roster players for ${teamName(side)}.`);
+    }
+
+    function revertPlayerSelectsToInputs(side) {
+      const rows = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`);
+      rows.forEach((row, i) => {
+        const pInput = row.querySelector('.player');
+        if (pInput && pInput.tagName === 'SELECT') {
+          const input = document.createElement('input');
+          input.className = pInput.className;
+          input.required = pInput.required;
+          input.placeholder = `Player ${i+1}`;
+          pInput.parentNode.replaceChild(input, pInput);
+          row.querySelector('.role').value = '';
+        }
+      });
+      
+      const draftBox = document.querySelector(`[data-draft-side="${side}"]`);
+      if (draftBox) {
+        const draftRows = draftBox.querySelectorAll('.draft-row');
+        draftRows.forEach((row) => {
+          const dInput = row.querySelector('.draft-player');
+          if (dInput && dInput.tagName === 'SELECT') {
+            const input = document.createElement('input');
+            input.className = dInput.className;
+            input.placeholder = 'Player';
+            dInput.parentNode.replaceChild(input, dInput);
+            row.querySelector('.draft-role').value = '';
+          }
+        });
+      }
     }
 
     // ═══ ENTRY FORM ═══
