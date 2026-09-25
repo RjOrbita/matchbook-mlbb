@@ -300,6 +300,15 @@
     function renderTeams() {
       const teams = Object.values(roster.teams);
       const allPlayers = Object.values(roster.players);
+
+      const gamesPlayedMap = {};
+      games.forEach(g => {
+        g.stats.forEach(s => {
+          const nameLower = s.player.toLowerCase();
+          gamesPlayedMap[nameLower] = (gamesPlayedMap[nameLower] || 0) + 1;
+        });
+      });
+
       $('#team-count-label').textContent = `${teams.length} team${teams.length !== 1 ? 's' : ''} registered`;
 
       if (teams.length === 0) {
@@ -308,7 +317,19 @@
       }
 
       $('#teams-grid').innerHTML = teams.map(team => {
-        const players = allPlayers.filter(p => p.teamId === team.id);
+        let players = allPlayers.filter(p => p.teamId === team.id);
+        
+        players.sort((a, b) => {
+          const isCoachA = (a.role || '').toLowerCase() === 'student coach';
+          const isCoachB = (b.role || '').toLowerCase() === 'student coach';
+          if (isCoachA && !isCoachB) return 1;
+          if (!isCoachA && isCoachB) return -1;
+          
+          const aGames = gamesPlayedMap[a.name.toLowerCase()] || 0;
+          const bGames = gamesPlayedMap[b.name.toLowerCase()] || 0;
+          return bGames - aGames;
+        });
+
         const logoHtml = team.logo ? `<img src="${team.logo}">` : esc(team.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2));
         
         return `
@@ -590,7 +611,26 @@
       const team = roster.teams[teamId];
       if (!team) return;
 
-      const teamPlayers = Object.values(roster.players).filter(p => p.teamId === teamId);
+      let teamPlayers = Object.values(roster.players).filter(p => p.teamId === teamId);
+      
+      const gamesPlayedMap = {};
+      games.forEach(g => {
+        g.stats.forEach(s => {
+          const nameLower = s.player.toLowerCase();
+          gamesPlayedMap[nameLower] = (gamesPlayedMap[nameLower] || 0) + 1;
+        });
+      });
+      
+      teamPlayers.sort((a, b) => {
+        const isCoachA = (a.role || '').toLowerCase() === 'student coach';
+        const isCoachB = (b.role || '').toLowerCase() === 'student coach';
+        if (isCoachA && !isCoachB) return 1;
+        if (!isCoachA && isCoachB) return -1;
+        
+        const aGames = gamesPlayedMap[a.name.toLowerCase()] || 0;
+        const bGames = gamesPlayedMap[b.name.toLowerCase()] || 0;
+        return bGames - aGames;
+      });
       
       let gamesPlayed = 0, wins = 0, totalK = 0, totalD = 0, totalA = 0;
       let totalDurationSec = 0;
