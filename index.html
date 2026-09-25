@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <link rel="icon" type="image/png" href="uec-logo.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a0a0a">
   <title>UEC Tournament Matchbook</title>
@@ -107,6 +108,22 @@
     @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px} th,td{padding:9px 5px;font-size:11px}}
     .grid-half{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-bottom:17px}
     .clickable-team:hover{transform:translateY(-4px);border-color:var(--mint);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+    
+    /* Top 3 Exaggeration */
+    tr.rank-1 td { font-size: 18px; font-weight: 800; color: #ffd700; background: rgba(255, 215, 0, 0.08); padding-top: 14px; padding-bottom: 14px; }
+    tr.rank-1 td.rank { font-size: 32px; font-weight: 900; color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.4); }
+    tr.rank-2 td { font-size: 16px; font-weight: 700; color: #e2e8f0; background: rgba(226, 232, 240, 0.05); padding-top: 12px; padding-bottom: 12px; }
+    tr.rank-2 td.rank { font-size: 26px; font-weight: 800; color: #e2e8f0; text-shadow: 0 0 10px rgba(226,232,240,0.3); }
+    tr.rank-3 td { font-size: 15px; font-weight: 700; color: #cd7f32; background: rgba(205, 127, 50, 0.05); padding-top: 10px; padding-bottom: 10px; }
+    tr.rank-3 td.rank { font-size: 22px; font-weight: 800; color: #cd7f32; text-shadow: 0 0 10px rgba(205,127,50,0.3); }
+    
+    .name-cell { display: flex; align-items: center; }
+    .top-photo { border-radius: 50%; object-fit: contain; vertical-align: middle; margin-right: 12px; background: transparent; mix-blend-mode: screen; }
+    .top-photo-placeholder { border-radius: 50%; background: transparent; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; margin-right: 12px; font-weight: bold; border: 2px solid; }
+    
+    .rank-1-photo { width: 56px; height: 56px; font-size: 24px; border: 2px solid #ffd700; }
+    .rank-2-photo { width: 48px; height: 48px; font-size: 20px; border: 2px solid #e2e8f0; }
+    .rank-3-photo { width: 42px; height: 42px; font-size: 16px; border: 2px solid #cd7f32; }
     
     #page-loader { position:fixed; inset:0; z-index:9999; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity 0.6s ease, visibility 0.6s ease; }
     #page-loader.hidden { opacity:0; visibility:hidden; }
@@ -373,7 +390,10 @@
 
       all.forEach(s => {
         const pkey = s.player.toLowerCase();
-        if (!players.has(pkey)) players.set(pkey, {name:s.player, games:0, wins:0, k:0, d:0, a:0, hero:{}});
+        if (!players.has(pkey)) {
+          const rPlayer = Object.values(roster.players).find(rp => rp.name.toLowerCase() === pkey) || {};
+          players.set(pkey, {name:s.player, realName: rPlayer.realName || '', photo: rPlayer.photo || '', games:0, wins:0, k:0, d:0, a:0, hero:{}});
+        }
         const p = players.get(pkey);
         p.games++; p.wins += s.won ? 1 : 0; p.k += s.kills; p.d += s.deaths; p.a += s.assists;
         p.hero[s.hero] = (p.hero[s.hero] || 0) + 1;
@@ -483,7 +503,19 @@
           case 'games': cols = `<td class="green">${p.games}</td><td>${kda}</td><td>${wr}</td><td>${esc(top)}</td>`; break;
           default: cols = `<td>${p.games}</td><td class="green">${kda}</td><td>${wr}</td><td>${esc(top)}</td>`;
         }
-        return `<tr><td class="rank">${rank}</td><td class="name"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span></td>${cols}</tr>`;
+
+        let nameHtml = `<span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>`;
+        let rowClass = '';
+        
+        if (rank <= 3) {
+          rowClass = ` class="rank-${rank}"`;
+          let photoHtml = p.photo 
+            ? `<img src="${p.photo}" class="top-photo rank-${rank}-photo">` 
+            : `<div class="top-photo-placeholder rank-${rank}-photo">${esc(p.name.charAt(0).toUpperCase())}</div>`;
+          nameHtml = `<div class="name-cell">${photoHtml}<div style="display:flex; flex-direction:column; justify-content:center; line-height:1.2;"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>${p.realName ? `<span style="font-size:0.75em; color:inherit; opacity:0.8; font-weight:normal; margin-top:3px;">${esc(p.realName)}</span>` : ''}</div></div>`;
+        }
+
+        return `<tr${rowClass}><td class="rank">${rank}</td><td class="name">${nameHtml}</td>${cols}</tr>`;
       }).join('');
     }
 
@@ -1016,6 +1048,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
