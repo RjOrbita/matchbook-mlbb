@@ -13,21 +13,21 @@ const MLBB_HEROES = [
   "Hanabi", "Hanzo", "Harith", "Harley", "Hayabusa", "Helcurt", "Hilda", "Hirara", "Hylos",
   "Irithel", "Ixia",
   "Jawhead", "Johnson", "Joy", "Julian",
-  "Kadita", "Kagura", "Kaja", "Karina", "Karrie", "Khaleed", "Khufra", "Kimmy",
-  "Lancelot", "Lapu-Lapu", "Layla", "Leomord", "Lesley", "Ling", "Lolita", "Lunox", "Luo Yi", "Lylia",
-  "Martis", "Masha", "Mathilda", "Melissa", "Minotaur", "Minsitthar", "Miya", "Moskov",
+  "Kadita", "Kagura", "Kaja", "Kalea", "Karina", "Karrie", "Khaleed", "Khufra", "Kimmy",
+  "Lancelot", "Lapu-Lapu", "Layla", "Leomord", "Lesley", "Ling", "Lolita", "Lukas", "Lunox", "Luo Yi", "Lylia",
+  "Marcel", "Martis", "Masha", "Mathilda", "Melissa", "Minotaur", "Minsitthar", "Miya", "Moskov",
   "Nana", "Natalia", "Natan", "Nolan", "Novaria",
-  "Odette",
+  "Obsidia", "Odette",
   "Paquito", "Pharsa", "Phoveus", "Popol and Kupa",
   "Rafaela", "Roger", "Ruby",
-  "Saber", "Selena", "Silvanna", "Sun", "Suyou",
+  "Saber", "Selena", "Silvanna", "Sora", "Sun", "Suyou",
   "Terizla", "Thamuz", "Tigreal",
   "Uranus",
   "Vale", "Valentina", "Valir", "Vexana",
   "Wanwan",
   "X.Borg", "Xavier",
   "Yi Sun-shin", "Yin", "Yu Zhong", "Yve",
-  "Zhask", "Zhuxin", "Zilong"
+  "Zetian", "Zhask", "Zhuxin", "Zilong"
 ];
 
 /**

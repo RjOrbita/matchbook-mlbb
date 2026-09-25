@@ -121,7 +121,7 @@
     /* ─── Hero dropdown (combobox) ─── */
     .hero-combo { position:relative; }
     .hero-combo input { width:100%; }
-    .hero-dropdown { position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; background:#0b1424; border:1px solid var(--accent); border-top:0; border-radius:0 0 7px 7px; z-index:50; display:none; }
+    .hero-dropdown { position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; background:#0b1424; border:1px solid var(--accent); border-top:0; border-radius:0 0 7px 7px; z-index:100; display:none; }
     .hero-dropdown.open { display:block; }
     .hero-dropdown .hero-option { padding:7px 10px; cursor:pointer; font-size:13px; }
     .hero-dropdown .hero-option:hover, .hero-dropdown .hero-option.highlighted { background:var(--panel-2); color:var(--ink); }
@@ -651,6 +651,17 @@
 
       const players = Object.values(roster.players).filter(p => p.teamId === teamId);
       
+      // Sort players by most games played first
+      const playCounts = {};
+      players.forEach(p => playCounts[p.name] = 0);
+      games.forEach(g => {
+        if (!g.stats) return;
+        g.stats.forEach(s => {
+          if (playCounts[s.player] !== undefined) playCounts[s.player]++;
+        });
+      });
+      players.sort((a, b) => playCounts[b.name] - playCounts[a.name]);
+      
       const rows = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`);
       rows.forEach((row, i) => {
         const pInput = row.querySelector('.player');
@@ -913,24 +924,57 @@
     }
 
     // ═══ FORM EVENTS & SYNC ═══
-    $('#game-form').addEventListener('input', e => {
-      if (e.target.classList.contains('hero-input') || e.target.classList.contains('draft-hero')) {
-        const row = e.target.closest('tr') || e.target.closest('.draft-row');
-        const playerName = row.querySelector('.player, .draft-player')?.value.trim();
-        const heroName = e.target.value.trim();
-        if (!playerName || !heroName) return;
-
-        $$('.draft-row').forEach(dr => {
-          if (dr !== row && dr.querySelector('.draft-player').value.trim() === playerName) {
-            dr.querySelector('.draft-hero').value = heroName;
+    ['input', 'change'].forEach(evt => {
+      $('#game-form').addEventListener(evt, e => {
+        const t = e.target;
+        if (t.classList.contains('hero-input') || t.classList.contains('draft-hero') ||
+            t.classList.contains('player') || t.classList.contains('draft-player') ||
+            t.classList.contains('role') || t.classList.contains('draft-role')) {
+          
+          const row = t.closest('tr') || t.closest('.draft-row');
+          if (!row) return;
+          
+          let side, index;
+          if (row.classList.contains('draft-row')) {
+            const sideBox = row.closest('[data-draft-side]');
+            if (!sideBox) return;
+            side = sideBox.dataset.draftSide;
+            index = Array.from(sideBox.querySelectorAll('.draft-row')).indexOf(row);
+          } else {
+            side = row.dataset.side;
+            if (!side) return;
+            const sideRows = Array.from(document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`));
+            index = sideRows.indexOf(row);
           }
-        });
-        $$('#scoreboard-body tr').forEach(tr => {
-          if (tr !== row && tr.querySelector('.player').value.trim() === playerName) {
-            tr.querySelector('.hero-input').value = heroName;
+          
+          if (side && index !== -1) {
+            const dRow = document.querySelectorAll(`[data-draft-side="${side}"] .draft-row`)[index];
+            const sRow = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`)[index];
+            
+            if (dRow && sRow) {
+              if (t.classList.contains('draft-hero')) sRow.querySelector('.hero-input').value = t.value;
+              else if (t.classList.contains('hero-input')) dRow.querySelector('.draft-hero').value = t.value;
+              
+              else if (t.classList.contains('draft-player') || t.classList.contains('player')) {
+                sRow.querySelector('.player').value = t.value;
+                dRow.querySelector('.draft-player').value = t.value;
+                
+                // Autofill role on player select
+                const teamId = side === 'a' ? $('#team-a').value : $('#team-b').value;
+                const playersList = Object.values(roster.players).filter(p => p.teamId === teamId);
+                const selectedP = playersList.find(p => p.name === t.value);
+                if (selectedP) {
+                  sRow.querySelector('.role').value = selectedP.role || '';
+                  dRow.querySelector('.draft-role').value = selectedP.role || '';
+                }
+              }
+              
+              else if (t.classList.contains('draft-role')) sRow.querySelector('.role').value = t.value;
+              else if (t.classList.contains('role')) dRow.querySelector('.draft-role').value = t.value;
+            }
           }
-        });
-      }
+        }
+      });
     });
 
     $('#game-form').addEventListener('submit', e => { e.preventDefault(); saveGame(false); });
