@@ -291,3 +291,55 @@ async function dbImportAll(data) {
     await dbSaveTournamentInfo(data.tournament);
   }
 }
+
+// --- ANALYTICS -------------------------------------------------------------
+
+/**
+ * Track a page view and handle presence
+ */
+function dbTrackView() {
+  if (!_firebaseReady) return;
+
+  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const deviceType = isMobile ? 'mobile' : 'desktop';
+
+  // Prevent double counting per session
+  if (!sessionStorage.getItem('matchbook_viewed')) {
+    _db.ref(nalytics/views/daily/).set(firebase.database.ServerValue.increment(1));
+    _db.ref(nalytics/devices/).set(firebase.database.ServerValue.increment(1));
+    sessionStorage.setItem('matchbook_viewed', 'true');
+  }
+
+  // Presence system
+  const connectedRef = _db.ref('.info/connected');
+  const myConnectionsRef = _db.ref('analytics/presence').push();
+
+  connectedRef.on('value', (snap) => {
+    if (snap.val() === true) {
+      myConnectionsRef.onDisconnect().remove();
+      myConnectionsRef.set(true);
+    }
+  });
+}
+
+/**
+ * Track clicks on profiles and matches
+ */
+function dbTrackClick(type, id) {
+  if (!_firebaseReady || !id) return;
+  // sanitize ID for firebase keys
+  const safeId = String(id).replace(/[.#$\/\[\]]/g, '_');
+  _db.ref(nalytics/clicks//).set(firebase.database.ServerValue.increment(1));
+}
+
+/**
+ * Listen for analytics data (Admin)
+ */
+function dbListenAnalytics(callback) {
+  if (!_firebaseReady) return;
+  _db.ref('analytics').on('value', snap => {
+    callback(snap.val() || {});
+  });
+}
+

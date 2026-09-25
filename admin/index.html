@@ -155,7 +155,8 @@
       <div class="nav" aria-label="Main navigation">
         <a href="../index.html"><span class="icon">←</span> Public stats</a>
         <button class="active" data-view="dashboard"><span class="icon">▦</span> Dashboard</button>
-        <button data-view="roster"><span class="icon">♟</span> Roster</button>
+        <button data-view="analytics"><span class="icon">??</span> Analytics</button>
+          <button data-view="roster"><span class="icon">♟</span> Roster</button>
         <button data-view="entry"><span class="icon">＋</span> Record a game</button>
         <button data-view="games"><span class="icon">◫</span> Game archive</button>
       </div>
@@ -235,6 +236,84 @@
         <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All recorded games synced across devices.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all data</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
         <article class="card" id="game-archive"></article>
       </section>
+    
+      <!-- --- ANALYTICS --- -->
+      <section id="analytics" class="view">
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">Real-time metrics</div>
+            <h1>Audience Analytics</h1>
+            <p class="sub">Track traffic, live viewers, and popular profiles.</p>
+          </div>
+        </div>
+        
+        <div class="summary">
+          <article class="stat" style="border: 2px solid var(--primary); background: rgba(243,92,39,0.05);">
+            <span class="label">Live Viewers</span>
+            <strong class="primary" id="live-viewers">0</strong>
+          </article>
+          <article class="stat">
+            <span class="label">Views Today</span>
+            <strong id="daily-views">0</strong>
+          </article>
+          <article class="stat">
+            <span class="label">Total Views</span>
+            <strong id="total-views">0</strong>
+          </article>
+        </div>
+
+        <div class="split" style="margin-top:20px;">
+          <!-- Left Column -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <article class="card">
+              <div class="panel-head"><h2>Mobile vs Desktop</h2></div>
+              <div class="panel-body">
+                <div style="display:flex; align-items:center; gap:20px;">
+                  <div style="width:120px; height:120px; border-radius:50%; background:conic-gradient(var(--primary) 0% 50%, var(--surface2) 50% 100%);" id="device-pie"></div>
+                  <div>
+                    <div style="margin-bottom:8px; font-weight:600;"><span style="display:inline-block; width:12px; height:12px; background:var(--primary); border-radius:2px; margin-right:6px;"></span>Mobile: <span id="mobile-pct">0%</span> (<span id="mobile-count">0</span>)</div>
+                    <div style="font-weight:600;"><span style="display:inline-block; width:12px; height:12px; background:var(--surface2); border-radius:2px; margin-right:6px;"></span>Desktop: <span id="desktop-pct">0%</span> (<span id="desktop-count">0</span>)</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="panel-head"><h2>Most Clicked Matches</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Match ID</th><th>Clicks</th></tr></thead>
+                  <tbody id="top-matches"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <!-- Right Column -->
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <article class="card">
+              <div class="panel-head"><h2>Fan Favorites (Players)</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Player</th><th>Profile Views</th></tr></thead>
+                  <tbody id="top-players"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="panel-head"><h2>Fan Favorites (Teams)</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Team</th><th>Profile Views</th></tr></thead>
+                  <tbody id="top-teams"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
   <section class="login-screen" id="login-screen" aria-label="Admin login">
@@ -1080,7 +1159,90 @@
     $('#new-team-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addTeam(); } });
 
     // ═══ INITIALIZE ═══
+    
+    // --- ANALYTICS LOGIC ---
+    function renderAnalytics(data) {
+      if (!data) return;
+
+      // 1. Live Viewers
+      const presence = data.presence || {};
+      const liveCount = Object.keys(presence).length;
+      $('#live-viewers').innerText = liveCount;
+
+      // 2. Views
+      const views = data.views || { daily: {} };
+      const date = new Date().toISOString().split('T')[0];
+      const todayViews = views.daily[date] || 0;
+      let totalViews = 0;
+      Object.values(views.daily).forEach(v => totalViews += v);
+      $('#daily-views').innerText = todayViews;
+      $('#total-views').innerText = totalViews;
+
+      // 3. Devices
+      const devices = data.devices || { mobile: 0, desktop: 0 };
+      const m = devices.mobile || 0;
+      const d = devices.desktop || 0;
+      const tot = m + d;
+      let mPct = 0;
+      let dPct = 0;
+      if (tot > 0) {
+        mPct = Math.round((m / tot) * 100);
+        dPct = 100 - mPct;
+      }
+      $('#mobile-pct').innerText = mPct + '%';
+      $('#desktop-pct').innerText = dPct + '%';
+      $('#mobile-count').innerText = m;
+      $('#desktop-count').innerText = d;
+      const pie = $('#device-pie');
+      if (pie) {
+        pie.style.background = `conic-gradient(var(--primary) 0% ${mPct}%, var(--surface2) ${mPct}% 100%)`;
+      }
+
+      // 4. Most Clicked Matches
+      const clicks = data.clicks || { players: {}, teams: {}, matches: {} };
+      
+      const renderTopList = (obj, targetId, getLabelFn) => {
+        const sorted = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const tbody = $(targetId);
+        if (!sorted.length) {
+          tbody.innerHTML = '<tr><td colspan="3"><div class="empty">No clicks recorded yet</div></td></tr>';
+          return;
+        }
+        tbody.innerHTML = sorted.map((entry, i) => {
+          return `<tr><td style="font-weight:bold; color:var(--muted);">${i+1}</td><td>${getLabelFn(entry[0])}</td><td class="primary"><strong>${entry[1]}</strong></td></tr>`;
+        }).join('');
+      };
+
+      const renderMatchesList = (obj, targetId) => {
+        const sorted = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const tbody = $(targetId);
+        if (!sorted.length) {
+          tbody.innerHTML = '<tr><td colspan="2"><div class="empty">No matches clicked yet</div></td></tr>';
+          return;
+        }
+        tbody.innerHTML = sorted.map(entry => {
+          const g = games.find(x => String(x.id).replace(/[.#$\/\\[\\]]/g, '_') === entry[0]);
+          const label = g ? `${g.teamA} vs ${g.teamB} <span style="font-size:10px;color:var(--muted)">(${g.date})</span>` : entry[0];
+          return `<tr><td>${label}</td><td class="primary"><strong>${entry[1]}</strong></td></tr>`;
+        }).join('');
+      };
+
+      renderTopList(clicks.players, '#top-players', key => {
+        const p = roster.players && Object.values(roster.players).find(rp => rp.name.toLowerCase() === key.toLowerCase());
+        if (p) return `<div style="display:flex; align-items:center; gap:8px;">${p.photo ? `<img src="${p.photo}" style="width:24px;height:24px;object-fit:contain;border-radius:50%;background:var(--surface2)">` : ''}${key}</div>`;
+        return key;
+      });
+
+      renderTopList(clicks.teams, '#top-teams', key => {
+        const t = roster.teams && roster.teams[key];
+        return t ? t.name : key;
+      });
+
+      renderMatchesList(clicks.matches, '#top-matches');
+    }
+
     async function init() {
+
       const online = await initDB();
       const noteEl = $('#db-note');
       const noteText = $('#db-note-text');
@@ -1115,6 +1277,7 @@
   </script>
 </body>
 </html>
+
 
 
 

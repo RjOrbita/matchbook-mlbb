@@ -603,7 +603,7 @@
       }).join('');
     }
     
-    window.showMatchDetails = function(gameId) {
+    window.showMatchDetails = function(gameId) { dbTrackClick('matches', gameId);
       if (window.closePlayerModal) window.closePlayerModal();
       if (window.closeTeamModal) window.closeTeamModal();
       
@@ -658,7 +658,7 @@
     };
 
     // ═══ TEAM PROFILE MODAL ═══
-    window.showTeamProfile = function(teamId) {
+    window.showTeamProfile = function(teamId) { dbTrackClick('teams', teamId);
       window.closeMatchModal();
       window.closePlayerModal();
 
@@ -861,7 +861,7 @@
     };
 
     // ═══ PLAYER PROFILE MODAL ═══
-    window.showPlayerProfile = function(playerName) {
+    window.showPlayerProfile = function(playerName) { dbTrackClick('players', playerName);
       if (window.closeMatchModal) window.closeMatchModal();
       if (window.closeTeamModal) window.closeTeamModal();
 
@@ -1027,7 +1027,7 @@
     });
 
     // ═══ INITIALIZE ═══
-    async function init() {
+    async function init() { dbTrackView();
       const badge = $('#connection-badge');
       const badgeText = $('#connection-text');
 
