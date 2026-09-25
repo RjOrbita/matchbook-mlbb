@@ -292,6 +292,7 @@ async function dbImportAll(data) {
   }
 }
 
+
 // --- ANALYTICS -------------------------------------------------------------
 
 /**
@@ -306,8 +307,8 @@ function dbTrackView() {
 
   // Prevent double counting per session
   if (!sessionStorage.getItem('matchbook_viewed')) {
-    _db.ref(nalytics/views/daily/).set(firebase.database.ServerValue.increment(1));
-    _db.ref(nalytics/devices/).set(firebase.database.ServerValue.increment(1));
+    _db.ref(`analytics/views/daily/${date}`).set(firebase.database.ServerValue.increment(1));
+    _db.ref(`analytics/devices/${deviceType}`).set(firebase.database.ServerValue.increment(1));
     sessionStorage.setItem('matchbook_viewed', 'true');
   }
 
@@ -329,8 +330,8 @@ function dbTrackView() {
 function dbTrackClick(type, id) {
   if (!_firebaseReady || !id) return;
   // sanitize ID for firebase keys
-  const safeId = String(id).replace(/[.#$\/\[\]]/g, '_');
-  _db.ref(nalytics/clicks//).set(firebase.database.ServerValue.increment(1));
+  const safeId = String(id).replace(/[.#$\[\]]/g, '_');
+  _db.ref(`analytics/clicks/${type}/${safeId}`).set(firebase.database.ServerValue.increment(1));
 }
 
 /**
@@ -342,4 +343,3 @@ function dbListenAnalytics(callback) {
     callback(snap.val() || {});
   });
 }
-

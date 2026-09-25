@@ -1027,11 +1027,12 @@
     });
 
     // ═══ INITIALIZE ═══
-    async function init() { dbTrackView();
+    async function init() {
       const badge = $('#connection-badge');
       const badgeText = $('#connection-text');
 
       const online = await initDB();
+      if (online) dbTrackView();
       if (online) {
         badge.classList.remove('offline');
         badgeText.textContent = 'Live — synced in real-time';
