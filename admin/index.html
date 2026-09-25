@@ -1261,7 +1261,11 @@
       dbListenRoster(updatedRoster => {
         roster = updatedRoster;
         renderRoster();
-        populateTeamSelects();
+                populateTeamSelects();
+      });
+
+      dbListenAnalytics(data => {
+        renderAnalytics(data);
       });
 
       resetForm();
@@ -1277,6 +1281,7 @@
   </script>
 </body>
 </html>
+
 
 
 
