@@ -77,7 +77,7 @@
     .draft-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .draft-team { border:1px solid var(--line); border-radius:10px; overflow:hidden; }
     .draft-team header { display:flex; justify-content:space-between; align-items:center; padding:10px 13px; background:rgba(11,20,36,.65); }
-    .draft-team .draft-row { display:grid; grid-template-columns:40px 1fr 1fr 68px; gap:7px; padding:8px 10px; border-top:1px solid rgba(39,54,80,.7); }
+    .draft-team .draft-row { display:grid; grid-template-columns:40px 1fr 1fr 68px 30px; gap:7px; padding:8px 10px; border-top:1px solid rgba(39,54,80,.7); }
     .draft-team input { padding:7px; }
     .draft-order { color:var(--muted); align-self:center; font-size:12px; font-weight:700; }
     .scoreboard { overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
@@ -134,7 +134,7 @@
     .db-status .dot.offline { background:var(--danger); }
 
     @media (max-width:950px) { .app{grid-template-columns:1fr}.side-note{display:none} aside{height:auto;position:static;padding:15px;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 9px 13px}.nav{display:flex;overflow:auto}.nav button{width:auto;white-space:nowrap}.split{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}.roster-grid{grid-template-columns:1fr} }
-    @media (max-width:640px) { main{padding:23px 14px 60px}.topbar{display:grid}.summary{grid-template-columns:repeat(2,1fr)}.form-grid,.draft-grid,.team-objectives{grid-template-columns:1fr}.objective-fields{grid-template-columns:repeat(4,1fr)} h1{font-size:26px}.topbar .actions{width:100%}.topbar .actions .btn{flex:1}.draft-team .draft-row{grid-template-columns:30px 1fr 1fr 52px;padding:7px}.draft-team .draft-row input{font-size:12px} }
+    @media (max-width:640px) { main{padding:23px 14px 60px}.topbar{display:grid}.summary{grid-template-columns:repeat(2,1fr)}.form-grid,.draft-grid,.team-objectives{grid-template-columns:1fr}.objective-fields{grid-template-columns:repeat(4,1fr)} h1{font-size:26px}.topbar .actions{width:100%}.topbar .actions .btn{flex:1}.draft-team .draft-row{grid-template-columns:30px 1fr 1fr 52px 25px;padding:7px;gap:5px}.draft-team .draft-row input{font-size:12px} }
   </style>
 </head>
 <body class="auth-needed">
@@ -211,12 +211,7 @@
           </article>
 
           <article class="card panel-body entry-section">
-            <div class="section-title"><h2>3. Team objectives</h2><p>Use zero for an objective not taken. First Blood is recorded as yes/no.</p></div>
-            <div class="team-objectives" id="objectives"></div>
-          </article>
-
-          <article class="card panel-body entry-section">
-            <div class="section-title"><h2>4. Player scoreboard and final builds</h2><p>Items can be entered as a comma-separated final build, in slot order.</p></div>
+            <div class="section-title"><h2>3. Player scoreboard and final builds</h2><p>Items can be entered as a comma-separated final build, in slot order.</p></div>
             <div class="scoreboard"><table><thead><tr><th>Side</th><th>Player *</th><th>Hero *</th><th>Role</th><th>K</th><th>D</th><th>A</th><th>KDA</th><th>Gold</th><th>Damage dealt</th><th>Damage taken</th><th>Turret dmg.</th><th>Obj. dmg.</th><th>TF part. %</th><th>Final item build</th></tr></thead><tbody id="scoreboard-body"></tbody></table></div>
             <p class="data-note">Extra values are optional—record them whenever the screenshot or replay makes them available. The system uses K/D/A, hero, and winner for the primary leaderboards.</p>
           </article>
@@ -640,7 +635,7 @@
         input.id = sel.id;
         input.placeholder = 'Type team name…';
         input.required = true;
-        input.addEventListener('input', () => { updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
+        input.addEventListener('input', () => { updateTeamLabels(); updateDraftLabels(); });
         sel.parentNode.replaceChild(input, sel);
         // We revert player selects to inputs in custom teams
         revertPlayerSelectsToInputs(side);
@@ -706,7 +701,6 @@
 
       updateTeamLabels();
       updateDraftLabels();
-      updateObjectiveLabels();
       toast(`Auto-filled roster players for ${teamName(side)}.`);
     }
 
@@ -750,6 +744,59 @@
       tbody.addEventListener('input', updateKdas);
     }
 
+    window.swapDraftRow = function(btn, dir) {
+      const row = btn.closest('.draft-row');
+      const sideBox = row.closest('[data-draft-side]');
+      const side = sideBox.dataset.draftSide;
+      const draftRows = Array.from(sideBox.querySelectorAll('.draft-row'));
+      const index = draftRows.indexOf(row);
+      const targetIndex = index + dir;
+      
+      if (targetIndex < 0 || targetIndex >= draftRows.length) return;
+      
+      const targetRow = draftRows[targetIndex];
+      const sRow1 = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`)[index];
+      const sRow2 = document.querySelectorAll(`#scoreboard-body tr[data-side="${side}"]`)[targetIndex];
+      
+      // Swap elements in draft (Hero, Player, Role)
+      const dHero1 = row.querySelector('.draft-hero');
+      const dPlayer1 = row.querySelector('.draft-player');
+      const dRole1 = row.querySelector('.draft-role');
+      
+      const dHero2 = targetRow.querySelector('.draft-hero');
+      const dPlayer2 = targetRow.querySelector('.draft-player');
+      const dRole2 = targetRow.querySelector('.draft-role');
+
+      [dHero1.value, dHero2.value] = [dHero2.value, dHero1.value];
+      
+      if (dPlayer1.tagName === dPlayer2.tagName) {
+        [dPlayer1.value, dPlayer2.value] = [dPlayer2.value, dPlayer1.value];
+      } else {
+        // Different tags (input vs select due to roster logic mismatch, shouldn't happen, but just in case)
+        const temp = dPlayer1.value;
+        dPlayer1.value = dPlayer2.value;
+        dPlayer2.value = temp;
+      }
+      
+      [dRole1.value, dRole2.value] = [dRole2.value, dRole1.value];
+
+      // Swap elements in scoreboard
+      if (sRow1 && sRow2) {
+        const sInputs1 = Array.from(sRow1.querySelectorAll('input, select'));
+        const sInputs2 = Array.from(sRow2.querySelectorAll('input, select'));
+        
+        sInputs1.forEach((input1, i) => {
+          const input2 = sInputs2[i];
+          if (input2) {
+            const temp = input1.value;
+            input1.value = input2.value;
+            input2.value = temp;
+          }
+        });
+        updateKdas();
+      }
+    };
+
     function makeDraft() {
       const grid = $('#draft-grid');
       grid.innerHTML = ['a','b'].map(side => `
@@ -760,9 +807,9 @@
             ${[1,2,3,4,5].map(n => `<input class="draft-ban" placeholder="B${n}" style="width:100%; font-size:11px; padding:6px; text-align:center;">`).join('')}
           </div>
           <div style="padding:8px 10px; font-size:11px; color:var(--primary); background:rgba(113,231,189,0.06); border-top:1px solid rgba(39,54,80,.7); display:flex; justify-content:space-between;">
-            <strong>PICKS</strong><span class="muted">Order • hero • player • role</span>
+            <strong>PICKS</strong><span class="muted">Order • hero • player • role • ↕</span>
           </div>
-          ${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select></div>`).join('')}
+          ${[1,2,3,4,5].map(n => `<div class="draft-row"><span class="draft-order">${n}</span><input class="draft-hero" placeholder="Hero"><input class="draft-player" placeholder="Player"><select class="draft-role"><option value="">Role</option><option>EXP</option><option>Jungle</option><option>Mid</option><option>Gold</option><option>Roam</option></select><div style="display:flex; flex-direction:column; gap:2px;"><button type="button" class="btn small" style="padding:0; height:100%; font-size:10px;" onclick="swapDraftRow(this, -1)" ${n===1?'disabled':''}>↑</button><button type="button" class="btn small" style="padding:0; height:100%; font-size:10px;" onclick="swapDraftRow(this, 1)" ${n===5?'disabled':''}>↓</button></div></div>`).join('')}
         </div>
       `).join('');
       grid.querySelectorAll('.draft-hero').forEach(setupHeroCombo);
@@ -770,14 +817,8 @@
       updateDraftLabels();
     }
 
-    function makeObjectives() {
-      $('#objectives').innerHTML = ['a','b'].map(side => `<div class="team-box" data-objective-side="${side}"><h3>${side === 'a' ? 'Team 1' : 'Team 2'}</h3><div class="objective-fields"><label>Towers<input class="towers" type="number" min="0" value="0"></label><label>Turtles<input class="turtles" type="number" min="0" value="0"></label><label>Lords<input class="lords" type="number" min="0" value="0"></label><label>First blood<select class="first-blood"><option value="no">No</option><option value="yes">Yes</option></select></label></div></div>`).join('');
-      updateObjectiveLabels();
-    }
-
     function updateTeamLabels() { $$('#scoreboard-body tr').forEach(row => { row.querySelector('.side-name').textContent = teamName(row.dataset.side); }); }
     function updateDraftLabels() { $$('[data-draft-side]').forEach(box => { box.querySelector('h3').textContent = `${teamName(box.dataset.draftSide)} picks`; }); }
-    function updateObjectiveLabels() { $$('[data-objective-side]').forEach(box => { box.querySelector('h3').textContent = teamName(box.dataset.objectiveSide); }); }
     function updateKdas() { $$('#scoreboard-body tr').forEach(row => { const k=num(row.querySelector('.kills').value), d=num(row.querySelector('.deaths').value), a=num(row.querySelector('.assists').value); row.querySelector('.kda-preview').textContent = ((k+a)/Math.max(1,d)).toFixed(1); }); }
 
     function resetForm() {
@@ -799,7 +840,6 @@
       });
       populateTeamSelects();
       makeDraft();
-      makeObjectives();
       makeEntryRows();
       updateKdas();
     }
@@ -833,8 +873,7 @@
         b: boxB ? Array.from(boxB.querySelectorAll('.draft-ban')).map(i => i.value.trim()).filter(Boolean) : []
       };
 
-      const objectives = Array.from($$('[data-objective-side]')).map(box => ({side:box.dataset.objectiveSide, towers:num(box.querySelector('.towers').value), turtles:num(box.querySelector('.turtles').value), lords:num(box.querySelector('.lords').value), firstBlood:box.querySelector('.first-blood').value === 'yes'}));
-      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), screenshot: currentScreenshotBase64, ...basic, stats, draft, bans, objectives };
+      return { id: crypto.randomUUID(), createdAt: new Date().toISOString(), screenshot: currentScreenshotBase64, ...basic, stats, draft, bans };
     }
 
     function validGame(game) {
@@ -919,8 +958,8 @@
 
     // ═══ TEAM SELECT EVENTS ═══
     function setupTeamListeners() {
-      $('#team-a').addEventListener('change', () => { onTeamSelected('a'); updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
-      $('#team-b').addEventListener('change', () => { onTeamSelected('b'); updateTeamLabels(); updateDraftLabels(); updateObjectiveLabels(); });
+      $('#team-a').addEventListener('change', () => { onTeamSelected('a'); updateTeamLabels(); updateDraftLabels(); });
+      $('#team-b').addEventListener('change', () => { onTeamSelected('b'); updateTeamLabels(); updateDraftLabels(); });
     }
 
     // ═══ FORM EVENTS & SYNC ═══
