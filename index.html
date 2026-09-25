@@ -105,8 +105,20 @@
     .modal-close:hover{color:var(--ink)}
     .match-screenshot{width:100%;max-height:450px;object-fit:contain;background:#060a12;border-radius:8px;margin-bottom:20px;border:1px solid var(--line)}
 
-    @media(max-width:770px){.shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px} th,td{padding:9px 5px;font-size:11px}}
-    .grid-half{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-bottom:17px}
+        .grid-half{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-bottom:17px}
+    @media(max-width:770px){
+      .shell{padding:0 16px}.hero{align-items:start;display:grid;padding-top:37px}.stats,.grid,.grid-half{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.live{justify-self:start}.header{height:64px}.admin-link{font-size:12px}.teams-grid{grid-template-columns:1fr}.modal-content{margin:10px auto;padding:20px 15px} th,td{padding:9px 5px;font-size:11px}
+      #players td:nth-child(6), #lb-header th:nth-child(6) { display: none; }
+      .rank-1-photo { width: 36px !important; height: 36px !important; font-size: 16px !important; }
+      .rank-2-photo { width: 32px !important; height: 32px !important; font-size: 14px !important; }
+      .rank-3-photo { width: 28px !important; height: 28px !important; font-size: 12px !important; }
+      tr.rank-1 td, tr.rank-2 td, tr.rank-3 td { padding-top: 8px !important; padding-bottom: 8px !important; font-size: 12px !important; }
+      tr.rank-1 td.rank { font-size: 20px !important; }
+      tr.rank-2 td.rank { font-size: 18px !important; }
+      tr.rank-3 td.rank { font-size: 16px !important; }
+      .real-name-sub { display: none !important; }
+      .top-photo, .top-photo-placeholder { margin-right: 6px !important; }
+    }
     .clickable-team:hover{transform:translateY(-4px);border-color:var(--mint);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
     
     /* Top 3 Exaggeration */
@@ -512,7 +524,7 @@
           let photoHtml = p.photo 
             ? `<img src="${p.photo}" class="top-photo rank-${rank}-photo">` 
             : `<div class="top-photo-placeholder rank-${rank}-photo">${esc(p.name.charAt(0).toUpperCase())}</div>`;
-          nameHtml = `<div class="name-cell">${photoHtml}<div style="display:flex; flex-direction:column; justify-content:center; line-height:1.2;"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>${p.realName ? `<span style="font-size:0.75em; color:inherit; opacity:0.8; font-weight:normal; margin-top:3px;">${esc(p.realName)}</span>` : ''}</div></div>`;
+          nameHtml = `<div class="name-cell">${photoHtml}<div style="display:flex; flex-direction:column; justify-content:center; line-height:1.2;"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span>${p.realName ? `<span class="real-name-sub" style="font-size:0.75em; color:inherit; opacity:0.8; font-weight:normal; margin-top:3px;">${esc(p.realName)}</span>` : ''}</div></div>`;
         }
 
         return `<tr${rowClass}><td class="rank">${rank}</td><td class="name">${nameHtml}</td>${cols}</tr>`;
