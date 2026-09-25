@@ -133,7 +133,7 @@
 
     <!-- ═══ LEADERBOARD + RESULTS ═══ -->
     <section class="grid">
-      <article class="card" style="margin-bottom:0">
+      <article class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
         <div class="head"><h2>Player leaderboard</h2><span>All recorded games</span></div>
         <div class="lb-tabs" id="lb-tabs">
           <button class="lb-tab active" data-sort="kda">Best KDA</button>
@@ -143,21 +143,26 @@
           <button class="lb-tab" data-sort="winrate">Win Rate</button>
           <button class="lb-tab" data-sort="games">Most Games</button>
         </div>
-        <div class="table-wrap">
+        <div style="padding:10px 15px; border-bottom:1px solid var(--line);">
+          <input type="text" id="player-search" placeholder="Search player..." style="width:100%; padding:8px; border-radius:5px; border:1px solid var(--line); background:#0b1424; color:#fff;">
+        </div>
+        <div class="table-wrap" style="flex:1;">
           <table>
             <thead><tr id="lb-header"></tr></thead>
             <tbody id="players"></tbody>
           </table>
         </div>
+        <div id="player-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-top:1px solid var(--line); font-size:13px; color:var(--muted);"></div>
       </article>
-      <article class="card" style="margin-bottom:0">
+      <article class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
         <div class="head"><h2>Latest results</h2><span>Click a match for details</span></div>
-        <div class="results" id="results"></div>
+        <div class="results" id="results" style="flex:1;"></div>
+        <div id="results-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-top:1px solid var(--line); font-size:13px; color:var(--muted);"></div>
       </article>
     </section>
 
     <!-- ═══ HERO TRENDS ═══ -->
-    <section class="card">
+    <section class="card" style="display:flex; flex-direction:column;">
       <div class="head"><h2>Hero trends</h2><span>Pick, ban, and performance totals</span></div>
       <div class="lb-tabs" id="hero-tabs">
         <button class="lb-tab active" data-sort="picks">Most Picked</button>
@@ -165,12 +170,16 @@
         <button class="lb-tab" data-sort="winrate">Win Rate</button>
         <button class="lb-tab" data-sort="kda">Best KDA</button>
       </div>
-      <div class="table-wrap">
+      <div style="padding:10px 15px; border-bottom:1px solid var(--line);">
+        <input type="text" id="hero-search" placeholder="Search hero..." style="width:100%; padding:8px; border-radius:5px; border:1px solid var(--line); background:#0b1424; color:#fff;">
+      </div>
+      <div class="table-wrap" style="flex:1;">
         <table>
           <thead><tr><th>Hero</th><th>Picks</th><th>Bans</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead>
           <tbody id="heroes"></tbody>
         </table>
       </div>
+      <div id="hero-pagination" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-top:1px solid var(--line); font-size:13px; color:var(--muted);"></div>
     </section>
     
     <!-- ═══ MATCH MODAL ═══ -->
@@ -217,6 +226,34 @@
     let roster = { teams:{}, players:{} };
     let currentPlayerSort = 'kda';
     let currentHeroSort = 'picks';
+
+    // Pagination & Search state
+    let playerPage = 1;
+    let heroPage = 1;
+    let resultsPage = 1;
+    const ITEMS_PER_PAGE = 10;
+    
+    let playerSearchTerm = '';
+    let heroSearchTerm = '';
+
+    window.changePlayerPage = function(p) { playerPage = p; renderPlayerLeaderboard(processData()); };
+    window.changeHeroPage = function(p) { heroPage = p; renderHeroTrends(processData()); };
+    window.changeResultsPage = function(p) { resultsPage = p; renderResults(); };
+
+    function makePaginationHtml(total, page, perPage, callbackName) {
+      if (total <= perPage && total > 0) return `<span style="opacity:0.5">Showing all ${total}</span><div></div>`;
+      if (total === 0) return `<span></span><div></div>`;
+      const totalPages = Math.ceil(total / perPage);
+      const isPrevDisabled = page === 1 ? 'disabled' : '';
+      const isNextDisabled = page === totalPages ? 'disabled' : '';
+      return `
+        <span>Page ${page} of ${totalPages} (${total} total)</span>
+        <div style="display:flex; gap:5px;">
+          <button class="btn small" style="padding:2px 8px; font-size:12px;" onclick="${callbackName}(${page - 1})" ${isPrevDisabled}>Prev</button>
+          <button class="btn small" style="padding:2px 8px; font-size:12px;" onclick="${callbackName}(${page + 1})" ${isNextDisabled}>Next</button>
+        </div>
+      `;
+    }
 
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
@@ -311,7 +348,13 @@
 
     // ═══ PLAYER LEADERBOARD (SORTABLE) ═══
     function renderPlayerLeaderboard(data) {
-      const playerArr = [...data.players.values()];
+      let playerArr = [...data.players.values()];
+      
+      // Apply search filter
+      if (playerSearchTerm) {
+        playerArr = playerArr.filter(p => p.name.toLowerCase().includes(playerSearchTerm) || (p.realName && p.realName.toLowerCase().includes(playerSearchTerm)));
+      }
+
       const sort = currentPlayerSort;
 
       const headers = {
@@ -334,17 +377,35 @@
         games:   (a, b) => b.games - a.games
       };
 
-      const sorted = playerArr.sort(sorters[sort] || sorters.kda).slice(0, 15);
+      playerArr.sort(sorters[sort] || sorters.kda);
+      
+      const totalItems = playerArr.length;
+      
+      // Fix bounds if page is out of range
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      if (playerPage > totalPages && totalPages > 0) playerPage = totalPages;
+      if (playerPage < 1) playerPage = 1;
+
+      const start = (playerPage - 1) * ITEMS_PER_PAGE;
+      const sorted = playerArr.slice(start, start + ITEMS_PER_PAGE);
 
       if (!sorted.length) {
-        $('#players').innerHTML = `<tr><td colspan="6"><div class="empty"><strong>No completed games yet</strong>The admin will add a record after the next match.</div></td></tr>`;
+        if (playerSearchTerm) {
+          $('#players').innerHTML = `<tr><td colspan="6"><div class="empty"><strong>No players found</strong>Try a different search term.</div></td></tr>`;
+        } else {
+          $('#players').innerHTML = `<tr><td colspan="6"><div class="empty"><strong>No completed games yet</strong>The admin will add a record after the next match.</div></td></tr>`;
+        }
+        $('#player-pagination').innerHTML = makePaginationHtml(0, 1, ITEMS_PER_PAGE, 'changePlayerPage');
         return;
       }
+
+      $('#player-pagination').innerHTML = makePaginationHtml(totalItems, playerPage, ITEMS_PER_PAGE, 'changePlayerPage');
 
       $('#players').innerHTML = sorted.map((p, i) => {
         const top = Object.entries(p.hero).sort((a,b) => b[1] - a[1])[0][0];
         const kda = calcKda(p.k, p.a, p.d);
         const wr = Math.round(p.wins/p.games*100) + '%';
+        const rank = start + i + 1;
 
         let cols;
         switch(sort) {
@@ -355,13 +416,19 @@
           case 'games': cols = `<td class="green">${p.games}</td><td>${kda}</td><td>${wr}</td><td>${esc(top)}</td>`; break;
           default: cols = `<td>${p.games}</td><td class="green">${kda}</td><td>${wr}</td><td>${esc(top)}</td>`;
         }
-        return `<tr><td class="rank">${i+1}</td><td class="name"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span></td>${cols}</tr>`;
+        return `<tr><td class="rank">${rank}</td><td class="name"><span class="clickable-player" onclick="showPlayerProfile('${esc(p.name)}')">${esc(p.name)}</span></td>${cols}</tr>`;
       }).join('');
     }
 
     // ═══ HERO TRENDS (SORTABLE) ═══
     function renderHeroTrends(data) {
-      const heroArr = [...data.heroes.values()];
+      let heroArr = [...data.heroes.values()];
+      
+      // Apply search filter
+      if (heroSearchTerm) {
+        heroArr = heroArr.filter(h => h.name.toLowerCase().includes(heroSearchTerm));
+      }
+
       const sort = currentHeroSort;
 
       const sorters = {
@@ -371,12 +438,28 @@
         kda:     (a, b) => ((b.k+b.a)/Math.max(1,b.d)) - ((a.k+a.a)/Math.max(1,a.d))
       };
 
-      const sorted = heroArr.sort(sorters[sort] || sorters.picks).slice(0, 15);
+      heroArr.sort(sorters[sort] || sorters.picks);
+      
+      const totalItems = heroArr.length;
+      
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      if (heroPage > totalPages && totalPages > 0) heroPage = totalPages;
+      if (heroPage < 1) heroPage = 1;
+
+      const start = (heroPage - 1) * ITEMS_PER_PAGE;
+      const sorted = heroArr.slice(start, start + ITEMS_PER_PAGE);
 
       if (!sorted.length) {
-        $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
+        if (heroSearchTerm) {
+          $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No heroes found</strong>Try a different search term.</div></td></tr>`;
+        } else {
+          $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
+        }
+        $('#hero-pagination').innerHTML = makePaginationHtml(0, 1, ITEMS_PER_PAGE, 'changeHeroPage');
         return;
       }
+
+      $('#hero-pagination').innerHTML = makePaginationHtml(totalItems, heroPage, ITEMS_PER_PAGE, 'changeHeroPage');
 
       $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--danger)">${h.bans || 0}</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${h.picks ? calcKda(h.k, h.a, h.d) : '—'}</td><td>${h.players.size}</td></tr>`).join('');
     }
@@ -385,10 +468,21 @@
     function renderResults() {
       if (!games.length) {
         $('#results').innerHTML = '<div class="empty"><strong>No completed games yet</strong>The admin will add a record after the next match.</div>';
+        $('#results-pagination').innerHTML = makePaginationHtml(0, 1, ITEMS_PER_PAGE, 'changeResultsPage');
         return;
       }
+      
+      const totalItems = games.length;
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      if (resultsPage > totalPages && totalPages > 0) resultsPage = totalPages;
+      if (resultsPage < 1) resultsPage = 1;
 
-      $('#results').innerHTML = games.slice(0, 6).map(g => {
+      const start = (resultsPage - 1) * ITEMS_PER_PAGE;
+      const paginatedGames = games.slice(start, start + ITEMS_PER_PAGE);
+
+      $('#results-pagination').innerHTML = makePaginationHtml(totalItems, resultsPage, ITEMS_PER_PAGE, 'changeResultsPage');
+
+      $('#results').innerHTML = paginatedGames.map(g => {
         const a = g.stats.filter(s => s.side === 'a').reduce((n, s) => n + s.kills, 0);
         const b = g.stats.filter(s => s.side === 'b').reduce((n, s) => n + s.kills, 0);
         return `<div class="result" onclick="showMatchDetails('${g.id}')">
@@ -740,7 +834,7 @@
       renderResults();
     }
 
-    // ═══ TAB EVENTS ═══
+    // ═══ TAB & SEARCH EVENTS ═══
     $('#lb-tabs').addEventListener('click', e => {
       const tab = e.target.closest('.lb-tab');
       if (!tab) return;
@@ -757,6 +851,20 @@
       $$('#hero-tabs .lb-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentHeroSort = tab.dataset.sort;
+      const data = processData();
+      renderHeroTrends(data);
+    });
+
+    $('#player-search').addEventListener('input', e => {
+      playerSearchTerm = e.target.value.toLowerCase();
+      playerPage = 1; // Reset to page 1 on search
+      const data = processData();
+      renderPlayerLeaderboard(data);
+    });
+
+    $('#hero-search').addEventListener('input', e => {
+      heroSearchTerm = e.target.value.toLowerCase();
+      heroPage = 1; // Reset to page 1 on search
       const data = processData();
       renderHeroTrends(data);
     });
@@ -790,3 +898,4 @@
   </script>
 </body>
 </html>
+
