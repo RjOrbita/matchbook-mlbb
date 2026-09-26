@@ -214,7 +214,7 @@
       </div>
       <div class="table-wrap" style="flex:1;">
         <table>
-          <thead><tr><th>Hero</th><th>Picks</th><th>Bans</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead>
+          <thead><tr><th>Hero</th><th>Picks</th><th>Bans</th><th>Ban Rate</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead>
           <tbody id="heroes"></tbody>
         </table>
       </div>
@@ -562,9 +562,9 @@
 
       if (!sorted.length) {
         if (heroSearchTerm) {
-          $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No heroes found</strong>Try a different search term.</div></td></tr>`;
+          $('#heroes').innerHTML = `<tr><td colspan="8"><div class="empty"><strong>No heroes found</strong>Try a different search term.</div></td></tr>`;
         } else {
-          $('#heroes').innerHTML = `<tr><td colspan="7"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
+          $('#heroes').innerHTML = `<tr><td colspan="8"><div class="empty"><strong>No completed games yet</strong>Hero data will appear after the first game.</div></td></tr>`;
         }
         $('#hero-pagination').innerHTML = makePaginationHtml(0, 1, ITEMS_PER_PAGE, 'changeHeroPage');
         return;
@@ -572,7 +572,11 @@
 
       $('#hero-pagination').innerHTML = makePaginationHtml(totalItems, heroPage, ITEMS_PER_PAGE, 'changeHeroPage');
 
-      $('#heroes').innerHTML = sorted.map(h => `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--danger)">${h.bans || 0}</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${h.picks ? calcKda(h.k, h.a, h.d) : '—'}</td><td>${h.players.size}</td></tr>`).join('');
+      $('#heroes').innerHTML = sorted.map(h => {
+        const totalGames = games.length || 1;
+        const banRate = h.bans ? Math.round((h.bans / totalGames) * 100) : 0;
+        return `<tr><td class="name">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--danger)">${h.bans || 0}</td><td style="color:var(--danger)">${banRate}%</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${h.picks ? calcKda(h.k, h.a, h.d) : '-'}</td><td>${h.players.size}</td></tr>`;
+      }).join('');
     }
 
     // ═══ RESULTS & MODAL ═══
