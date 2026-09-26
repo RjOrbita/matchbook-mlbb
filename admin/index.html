@@ -175,7 +175,7 @@
           <article class="card"><div class="panel-head"><h2>Recent games</h2><button class="btn" data-view="games">View all</button></div><div class="panel-body"><div id="recent-games" class="recent"></div></div></article>
         </div>
         <div style="height:18px"></div>
-        <article class="card"><div class="panel-head"><h2>Hero snapshot</h2><span class="muted">Draft and performance totals</span></div><div class="table-wrap"><table><thead><tr><th>Hero</th><th>Picks</th><th>Bans</th><th>Ban Rate</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead><tbody id="hero-leaderboard"></tbody></table></div></article>
+        <article class="card"><div class="panel-head"><h2>Hero snapshot</h2><span class="muted">Draft and performance totals</span></div><div class="table-wrap"><table><thead><tr><th>Hero</th><th>Picks</th><th>Pick Rate</th><th>Bans</th><th>Ban Rate</th><th>Wins</th><th>Win rate</th><th>Avg. KDA</th><th>Players</th></tr></thead><tbody id="hero-leaderboard"></tbody></table></div></article>
       </section>
 
       <!-- ═══ ROSTER ═══ -->
@@ -1011,10 +1011,11 @@
 
       const heroRows=[...heroes.values()].sort((a,b)=>b.picks-a.picks||b.wins-a.wins).slice(0,8);
       $('#hero-leaderboard').innerHTML=heroRows.length?heroRows.map(h=>{
-          const totalGames = games.length || 1;
-          const banRate = h.bans ? Math.round((h.bans / totalGames) * 100) : 0;
-          return `<tr><td class="hero">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--danger)">${h.bans || 0}</td><td style="color:var(--danger)">${banRate}%</td><td>${h.wins}</td><td>${Math.round(h.wins/h.picks*100)}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`;
-        }).join('') : `<tr><td colspan="8" class="empty">Hero statistics will appear here once a game is saved.</td></tr>`;
+            const totalGames = games.length || 1;
+            const pickRate = h.picks ? Math.round((h.picks / totalGames) * 100) : 0;
+            const banRate = h.bans ? Math.round((h.bans / totalGames) * 100) : 0;
+            return `<tr><td class="hero">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--primary)">${pickRate}%</td><td style="color:var(--danger)">${h.bans || 0}</td><td style="color:var(--danger)">${banRate}%</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`;
+          }).join('') : `<tr><td colspan="9" class="empty">Hero statistics will appear here once a game is saved.</td></tr>`;
 
       $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} · Game ${g.gameNumber} · Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
 
