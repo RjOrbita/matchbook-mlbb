@@ -603,7 +603,7 @@
         const b = g.stats.filter(s => s.side === 'b').reduce((n, s) => n + s.kills, 0);
         return `<div class="result" onclick="showMatchDetails('${g.id}')">
           <div class="result-main"><span>${esc(g.teamA)}</span><span class="score">${a} – ${b}</span><span>${esc(g.teamB)}</span></div>
-          <div class="meta">${esc(g.stage)} · Game ${g.gameNumber} · ${esc(g.winner === 'a' ? g.teamA : g.teamB)} won</div>
+          <div class="meta">${esc(g.stage)} - Game ${g.gameNumber} - ${esc(g.winner === 'a' ? g.teamA : g.teamB)} won</div>
         </div>`;
       }).join('');
     }
@@ -636,7 +636,7 @@
               ${stats.map(s => `<tr>
                 <td><strong><span class="clickable-player" onclick="showPlayerProfile('${esc(s.player)}')">${esc(s.player)}</span></strong></td>
                 <td>${esc(s.hero)}</td>
-                <td><span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px">${esc(s.role||'—')}</span></td>
+                <td><span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px">${esc(s.role||'-')}</span></td>
                 <td>${s.kills} / ${s.deaths} / ${s.assists}</td>
               </tr>`).join('')}
             </tbody>
@@ -649,7 +649,7 @@
         <div style="text-align:center; margin-bottom:24px">
           <div style="color:var(--gold); font-size:12px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px">👑 ${winnerText} Won</div>
           <h2 style="font-size:24px; margin:0">${esc(game.teamA)} <span class="gold" style="margin:0 12px">${score1} - ${score2}</span> ${esc(game.teamB)}</h2>
-          <div class="muted" style="margin-top:8px">${esc(game.stage)} · Game ${game.gameNumber} · ${esc(game.date)}</div>
+          <div class="muted" style="margin-top:8px">${esc(game.stage)} - Game ${game.gameNumber} - ${esc(game.date)}</div>
         </div>
         ${game.screenshot ? `<img src="${game.screenshot}" class="match-screenshot">` : '<div style="text-align:center; padding:30px; background:#060a12; border-radius:8px; border:1px solid var(--line); color:var(--muted); margin-bottom:20px; font-size:13px">No post-game screenshot uploaded for this match.</div>'}
         ${makeTable(t1Stats, game.teamA, bans1)}
@@ -1040,10 +1040,10 @@
       if (online) dbTrackView();
       if (online) {
         badge.classList.remove('offline');
-        badgeText.textContent = 'Live — synced in real-time';
+        badgeText.textContent = 'Live - synced in real-time';
       } else {
         badge.classList.add('offline');
-        badgeText.textContent = 'Offline — local data only';
+        badgeText.textContent = 'Offline - local data only';
       }
 
       dbListenGames(updatedGames => {

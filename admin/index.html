@@ -153,12 +153,12 @@
     <aside>
       <div class="brand"><span class="brand-mark">M</span> Matchbook</div>
       <div class="nav" aria-label="Main navigation">
-        <a href="../index.html"><span class="icon">←</span> Public stats</a>
-        <button class="active" data-view="dashboard"><span class="icon">▦</span> Dashboard</button>
-        <button data-view="analytics"><span class="icon">??</span> Analytics</button>
-          <button data-view="roster"><span class="icon">♟</span> Roster</button>
-        <button data-view="entry"><span class="icon">＋</span> Record a game</button>
-        <button data-view="games"><span class="icon">◫</span> Game archive</button>
+        <a href="../index.html"><span class="icon">&#8599;</span> Public stats</a>
+        <button class="active" data-view="dashboard"><span class="icon">&#8962;</span> Dashboard</button>
+        <button data-view="analytics"><span class="icon">&#128200;</span> Analytics</button>
+          <button data-view="roster"><span class="icon">&#128101;</span> Roster</button>
+        <button data-view="entry"><span class="icon">&#10133;</span> Record a game</button>
+        <button data-view="games"><span class="icon">&#128193;</span> Game archive</button>
       </div>
       <div class="side-note" id="db-note">
         <span class="eyebrow">Your data</span><br>
@@ -168,7 +168,7 @@
     <main>
       <!-- ═══ DASHBOARD ═══ -->
       <section id="dashboard" class="view active">
-        <div class="topbar"><div><div class="eyebrow">Admin workspace · Tournament control room</div><h1>Stats, without the spreadsheet sprawl.</h1><p class="sub">Your post-game screenshot becomes a clean, searchable match record.</p></div><div class="actions"><a class="btn" href="../index.html">Open public page</a><button class="btn" id="export-data">Export backup</button><button class="btn" id="import-data">Import backup</button><input type="file" id="import-file" accept=".json" style="display:none"><button class="btn" id="logout">Sign out</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <div class="topbar"><div><div class="eyebrow">Admin workspace - Tournament control room</div><h1>Stats, without the spreadsheet sprawl.</h1><p class="sub">Your post-game screenshot becomes a clean, searchable match record.</p></div><div class="actions"><a class="btn" href="../index.html">Open public page</a><button class="btn" id="export-data">Export backup</button><button class="btn" id="import-data">Import backup</button><input type="file" id="import-file" accept=".json" style="display:none"><button class="btn" id="logout">Sign out</button><button class="btn primary" data-go-entry>+ Record game</button></div></div>
         <div class="summary" id="summary"></div>
         <div class="split">
           <article class="card"><div class="panel-head"><h2>Player leaderboard</h2><span class="muted">All recorded games</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Player</th><th>Games</th><th>KDA</th><th>Win rate</th><th>Most played hero</th></tr></thead><tbody id="player-leaderboard"></tbody></table></div></article>
@@ -233,7 +233,7 @@
 
       <!-- ═══ GAME ARCHIVE ═══ -->
       <section id="games" class="view">
-        <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All recorded games synced across devices.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all data</button><button class="btn primary" data-go-entry>＋ Record game</button></div></div>
+        <div class="topbar"><div><div class="eyebrow">Permanent record</div><h1>Game archive</h1><p class="sub">All recorded games synced across devices.</p></div><div class="actions"><button class="btn danger" id="clear-data">Clear all data</button><button class="btn primary" data-go-entry>+ Record game</button></div></div>
         <article class="card" id="game-archive"></article>
       </section>
     
@@ -420,17 +420,17 @@
       let highlighted = -1;
 
       function renderOptions(filter) {
-        const q = (filter || '').toLowerCase();
+        const q = (filter || '-').toLowerCase();
         const matches = MLBB_HEROES.filter(h => h.toLowerCase().includes(q));
         dropdown.innerHTML = matches.slice(0, 20).map((h, i) =>
-          `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || ''}</span></div>`
+          `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || '-'}</span></div>`
         ).join('');
         highlighted = -1;
         if (matches.length > 0 && q.length > 0) {
           dropdown.classList.add('open');
         } else if (q.length === 0) {
           dropdown.innerHTML = MLBB_HEROES.slice(0, 20).map(h =>
-            `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || ''}</span></div>`
+            `<div class="hero-option" data-hero="${esc(h)}">${esc(h)}<span class="hero-role-tag">${HERO_ROLES[h] || '-'}</span></div>`
           ).join('');
           dropdown.classList.add('open');
         } else {
@@ -633,7 +633,7 @@
           <input type="file" accept="image/*" style="display:none;" onchange="updatePlayerPhoto('${p.id}', this)">
         </label>
         <input class="rp-name" id="edit-name-${p.id}" value="${esc(p.name)}" placeholder="IGN">
-        <input class="rp-realname" id="edit-realname-${p.id}" value="${esc(p.realName || '')}" placeholder="Real Name">
+        <input class="rp-realname" id="edit-realname-${p.id}" value="${esc(p.realName || '-')}" placeholder="Real Name">
         <select class="rp-role" id="edit-role-${p.id}" style="width:115px">
           <option value="">Role</option>
           <option ${p.role === 'EXP' ? 'selected' : ''}>EXP</option>
@@ -658,9 +658,9 @@
         <strong>${esc(p.name)}</strong>
         ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1;">${esc(p.realName)}</span>` : ''}
       </span>
-      <span class="role-badge" style="margin-left:auto">${esc(p.role || '�')}</span>
-      <button class="btn small" style="padding: 2px 6px; font-size:12px;" onclick="startEditPlayer('${p.id}')" title="Edit Profile">??</button>
-      <button class="btn small danger" onclick="deletePlayer('${p.id}')" title="Delete Player">?</button>
+      <span class="role-badge" style="margin-left:auto">${esc(p.role || '-')}</span>
+      <button class="btn small" style="padding: 2px 6px; font-size:12px;" onclick="startEditPlayer('${p.id}')" title="Edit Profile">Edit</button>
+      <button class="btn small danger" onclick="deletePlayer('${p.id}')" title="Delete Player">Delete</button>
     </div>
   `;
 }).join('')}
@@ -838,11 +838,11 @@
           
           select.addEventListener('change', (e) => {
             const selectedP = players.find(p => p.name === e.target.value);
-            if (selectedP) row.querySelector('.role').value = selectedP.role || '';
+            if (selectedP) row.querySelector('.role').value = selectedP.role || '-';
           });
           
           pInput.parentNode.replaceChild(select, pInput);
-          row.querySelector('.role').value = players[i] ? (players[i].role || '') : '';
+          row.querySelector('.role').value = players[i] ? (players[i].role || '-') : '';
         }
       });
 
@@ -859,11 +859,11 @@
             
             select.addEventListener('change', (e) => {
               const selectedP = players.find(p => p.name === e.target.value);
-              if (selectedP) row.querySelector('.draft-role').value = selectedP.role || '';
+              if (selectedP) row.querySelector('.draft-role').value = selectedP.role || '-';
             });
             
             dInput.parentNode.replaceChild(select, dInput);
-            row.querySelector('.draft-role').value = players[i] ? (players[i].role || '') : '';
+            row.querySelector('.draft-role').value = players[i] ? (players[i].role || '-') : '';
           }
         });
       }
@@ -1096,7 +1096,7 @@
             return `<tr><td class="hero">${esc(h.name)}</td><td>${h.picks}</td><td style="color:var(--primary)">${pickRate}%</td><td style="color:var(--danger)">${h.bans || 0}</td><td style="color:var(--danger)">${banRate}%</td><td>${h.wins}</td><td>${h.picks ? Math.round(h.wins/h.picks*100) : 0}%</td><td class="green">${((h.k+h.a)/Math.max(1,h.d)).toFixed(2)}</td><td>${h.players.size}</td></tr>`;
           }).join('') : `<tr><td colspan="9" class="empty">Hero statistics will appear here once a game is saved.</td></tr>`;
 
-      $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} · Game ${g.gameNumber} · Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
+      $('#recent-games').innerHTML=games.length?games.slice(0,5).map(g=>`<div class="recent-item"><div class="recent-title"><span>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</span><span class="gold">${gameScore(g)}</span></div><div class="recent-detail">${esc(g.stage)} - Game ${g.gameNumber} - Winner: ${esc(displayWinner(g))}</div></div>`).join(''):`<div class="empty">No games have been saved yet.</div>`;
 
       $('#game-archive').innerHTML=games.length?`<div class="panel-head"><h2>${games.length} recorded game${games.length===1?'':'s'}</h2><span class="muted">Newest first</span></div>${games.map(g=>`<div class="game-card"><div class="game-no">G${g.gameNumber}</div><div><strong>${esc(g.teamA)} <span class="muted">vs</span> ${esc(g.teamB)}</strong><div class="game-meta">${esc(g.date)} · ${esc(g.stage)} · ${esc(g.duration||'Duration not recorded')}</div></div><div class="game-score">${gameScore(g)}<div class="game-meta">${esc(displayWinner(g))} won</div></div><div><button class="btn small danger" onclick="deleteGame('${g.id}')">Delete</button></div></div>`).join('')}`:`<div class="empty">Your saved games will appear here.</div>`;
     }
@@ -1177,8 +1177,8 @@
                 const playersList = Object.values(roster.players).filter(p => p.teamId === teamId);
                 const selectedP = playersList.find(p => p.name === t.value);
                 if (selectedP) {
-                  sRow.querySelector('.role').value = selectedP.role || '';
-                  dRow.querySelector('.draft-role').value = selectedP.role || '';
+                  sRow.querySelector('.role').value = selectedP.role || '-';
+                  dRow.querySelector('.draft-role').value = selectedP.role || '-';
                 }
               }
               
@@ -1332,9 +1332,9 @@
       const noteText = $('#db-note-text');
       if (online) {
         noteEl.classList.add('online');
-        noteText.innerHTML = '☁️ <strong>Online</strong> — Data syncs across all devices in real-time.';
+        noteText.innerHTML = '<strong>Online</strong> - Data syncs across all devices in real-time.';
       } else {
-        noteText.innerHTML = '💾 <strong>Local only</strong> — Configure Firebase in firebase-config.js to enable online sync.';
+        noteText.innerHTML = '<strong>Local only</strong> - Configure Firebase in firebase-config.js to enable online sync.';
       }
 
       dbListenGames(updatedGames => {
