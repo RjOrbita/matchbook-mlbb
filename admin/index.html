@@ -544,7 +544,60 @@
     }
 
     // ═══ ROSTER MANAGEMENT ═══
-    function renderRoster() {
+
+      // --- PLAYER EDITING ---
+      let editingPlayerId = null;
+
+      window.startEditPlayer = function(id) {
+        editingPlayerId = id;
+        renderRoster();
+      };
+
+      window.cancelEditPlayer = function() {
+        editingPlayerId = null;
+        renderRoster();
+      };
+
+      window.saveEditPlayer = async function(id) {
+        const p = roster.players[id];
+        if (!p) return;
+        
+        const newName = $('#edit-name-' + id).value.trim();
+        const newRealName = $('#edit-realname-' + id).value.trim();
+        const newRole = $('#edit-role-' + id).value;
+        
+        if (!newName) { toast('IGN is required'); return; }
+        
+        const oldName = p.name;
+        
+        // If IGN changed, update all recorded games to match the new IGN
+        if (oldName !== newName) {
+          const gamesToUpdate = games.filter(g => g.stats && g.stats.some(s => s.player === oldName));
+          for (let g of gamesToUpdate) {
+            let changed = false;
+            g.stats.forEach(s => {
+              if (s.player === oldName) {
+                s.player = newName;
+                changed = true;
+              }
+            });
+            if (changed) {
+              await dbSaveGame(g);
+            }
+          }
+        }
+        
+        p.name = newName;
+        p.realName = newRealName;
+        p.role = newRole;
+        
+        await dbSavePlayer(p);
+        
+        editingPlayerId = null;
+        renderRoster();
+      };
+
+      function renderRoster() {
       const grid = $('#roster-grid');
       const teams = Object.values(roster.teams);
       const allPlayers = Object.values(roster.players);
@@ -571,20 +624,46 @@
                 <button class="btn small danger" onclick="deleteTeam('${team.id}')">Delete</button>
               </div>
             </div>
-              ${players.map(p => `
-                <div class="roster-player" style="display:flex; align-items:center; gap:8px;">
-                  <label style="cursor:pointer; display:block; position:relative; width:24px; height:24px; flex-shrink:0;" title="Update Photo">
-                    ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
-                    <input type="file" accept="image/*" style="display:none;" onchange="updatePlayerPhoto('${p.id}', this)">
-                  </label>
-                  <span style="display:flex; flex-direction:column; justify-content:center;">
-                    <strong>${esc(p.name)}</strong>
-                    ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1;">${esc(p.realName)}</span>` : ''}
-                  </span>
-                  <span class="role-badge" style="margin-left:auto">${esc(p.role || '—')}</span>
-                  <button class="btn small danger" onclick="deletePlayer('${p.id}')">✕</button>
-                </div>
-              `).join('')}
+              ${players.map(p => {
+  if (typeof editingPlayerId !== 'undefined' && editingPlayerId === p.id) {
+    return `
+      <div class="roster-player edit-mode" style="display:grid; grid-template-columns:auto 1fr 1fr auto auto auto; gap:6px; align-items:center;">
+        <label style="cursor:pointer; display:block; position:relative; width:24px; height:24px; flex-shrink:0;" title="Update Photo">
+          ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
+          <input type="file" accept="image/*" style="display:none;" onchange="updatePlayerPhoto('${p.id}', this)">
+        </label>
+        <input class="rp-name" id="edit-name-${p.id}" value="${esc(p.name)}" placeholder="IGN">
+        <input class="rp-realname" id="edit-realname-${p.id}" value="${esc(p.realName || '')}" placeholder="Real Name">
+        <select class="rp-role" id="edit-role-${p.id}" style="width:115px">
+          <option value="">Role</option>
+          <option ${p.role === 'EXP' ? 'selected' : ''}>EXP</option>
+          <option ${p.role === 'Jungle' ? 'selected' : ''}>Jungle</option>
+          <option ${p.role === 'Mid' ? 'selected' : ''}>Mid</option>
+          <option ${p.role === 'Gold' ? 'selected' : ''}>Gold</option>
+          <option ${p.role === 'Roam' ? 'selected' : ''}>Roam</option>
+          <option ${p.role === 'Student Coach' ? 'selected' : ''}>Student Coach</option>
+        </select>
+        <button class="btn small primary" onclick="saveEditPlayer('${p.id}')">Save</button>
+        <button class="btn small" onclick="cancelEditPlayer()">Cancel</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="roster-player" style="display:flex; align-items:center; gap:8px;">
+      <label style="cursor:pointer; display:block; position:relative; width:24px; height:24px; flex-shrink:0;" title="Update Photo">
+        ${p.photo ? `<img src="${p.photo}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : `<div style="width:24px; height:24px; border-radius:50%; background:var(--surface2); border:1px solid var(--line);"></div>`}
+        <input type="file" accept="image/*" style="display:none;" onchange="updatePlayerPhoto('${p.id}', this)">
+      </label>
+      <span style="display:flex; flex-direction:column; justify-content:center;">
+        <strong>${esc(p.name)}</strong>
+        ${p.realName ? `<span style="font-size:10px; color:var(--muted); line-height:1;">${esc(p.realName)}</span>` : ''}
+      </span>
+      <span class="role-badge" style="margin-left:auto">${esc(p.role || '�')}</span>
+      <button class="btn small" style="padding: 2px 6px; font-size:12px;" onclick="startEditPlayer('${p.id}')" title="Edit Profile">??</button>
+      <button class="btn small danger" onclick="deletePlayer('${p.id}')" title="Delete Player">?</button>
+    </div>
+  `;
+}).join('')}
               <div class="add-player" style="display:grid; grid-template-columns:auto 1fr 1fr auto auto; gap:6px; align-items:center; margin-top:8px;">
                 <input type="file" id="rp-photo-${team.id}" accept="image/*" style="width:75px; font-size:10px;" title="Player Photo">
                 <input class="rp-name" id="rp-name-${team.id}" placeholder="IGN (e.g. Faker)">
